@@ -11,12 +11,12 @@ import java.util.Optional;
 @Repository
 public class JpaUserRepositoryAdapter implements UserRepositoryPort {
 
-    @PersistenceContext // Inyecta el EntityManager, que gestiona la persistencia
+    @PersistenceContext
     private EntityManager entityManager;
 
     @Transactional(readOnly = true)
     public Optional<User> findByUsername(String username) {
-        String jpql = "SELECT u FROM usuarios u WHERE u.username = :username";
+        String jpql = "SELECT u FROM User u WHERE u.username = :username";
 
         try {
             TypedQuery<User> query = entityManager.createQuery(jpql, User.class);
@@ -26,5 +26,31 @@ public class JpaUserRepositoryAdapter implements UserRepositoryPort {
         } catch (NoResultException e) {
             return Optional.empty();
         }
+    }
+
+    @Transactional
+    public User save(User user){
+        entityManager.persist(user);
+        return user;
+    }
+
+    @Transactional(readOnly = true)
+    public Boolean existsByEmail(String email){
+        String jpql = "SELECT COUNT(u) FROM User u WHERE u.email = :email";
+
+        TypedQuery<Long> query = entityManager.createQuery(jpql, Long.class);
+        query.setParameter("email", email);
+
+        return query.getSingleResult() > 0L;
+    }
+
+    @Transactional(readOnly = true)
+    public Boolean existsByUsername(String username){
+        String jpql = "SELECT COUNT(u) FROM User u WHERE u.username = :username";
+
+        TypedQuery<Long> query = entityManager.createQuery(jpql, Long.class);
+        query.setParameter("username", username);
+
+        return query.getSingleResult() > 0L;
     }
 }

@@ -12,6 +12,7 @@ import org.springframework.security.config.annotation.authentication.configurati
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -49,7 +50,7 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(csrf -> csrf.disable()) // Deshabilita CSRF para APIs stateless
+                .csrf(AbstractHttpConfigurer::disable) // Deshabilita CSRF para APIs stateless
                 .exceptionHandling(exception -> exception
                         .authenticationEntryPoint(authEntryPoint) // Manejo de errores de autenticación
                 )
@@ -61,15 +62,15 @@ public class SecurityConfig {
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll() // Permitir Swagger UI
                         .anyRequest().authenticated() // Cualquier otra petición requiere autenticación
                 )
-                .authenticationProvider(authenticationProvider()); // Usa nuestro proveedor de autenticación personalizado
+                .authenticationProvider(authenticationProvider()); // Usa proveedor de autenticación personalizado
 
-        // Añadir nuestro filtro JWT antes del filtro de autenticación de nombre de usuario/contraseña de Spring
+        // Añadir filtro JWT antes del filtro de autenticación de nombre de usuario/contraseña de Spring
         http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
 
-    // Puedes añadir un CommandLineRunner para inicializar roles si no lo haces con SQL
+    // En el futuro valorar añadir un CommandLineRunner para inicializar roles para no hacerlo en SQL
     /*
     @Bean
     public CommandLineRunner initRoles(RoleRepositoryPort roleRepository) {
