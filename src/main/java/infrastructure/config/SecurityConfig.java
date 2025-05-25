@@ -18,6 +18,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.csrf.CsrfFilter;
 
 @Configuration
 @EnableWebSecurity
@@ -50,7 +51,8 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(AbstractHttpConfigurer::disable) // Deshabilita CSRF para APIs stateless
+                .csrf(AbstractHttpConfigurer::disable)// Deshabilita CSRF para APIs stateless
+                .cors(AbstractHttpConfigurer::disable)
                 .exceptionHandling(exception -> exception
                         .authenticationEntryPoint(authEntryPoint) // Manejo de errores de autenticación
                 )
