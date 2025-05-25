@@ -23,7 +23,6 @@ COPY ${JAR_FILE} app.jar
 EXPOSE ${APP_PORT}
 EXPOSE 5005
 
-# Comando de inicio
 # Elige los argumentos JVM basados en JVM_OPTS_PROFILE
 # Si JVM_OPTS_PROFILE es "debug", usa JVM_OPTS_DEBUG. Si no, usa JVM_OPTS_PROD.
 ENTRYPOINT [ "sh", "-c", "java ${JVM_OPTS_PROFILE:-debug} == 'debug' ? \"${JVM_OPTS_DEBUG}\" : \"${JVM_OPTS_PROD}\" -Dserver.port=${SERVER_PORT} -jar app.jar" ]
