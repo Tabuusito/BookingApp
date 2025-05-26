@@ -15,7 +15,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Service
-@RequiredArgsConstructor // Genera un constructor con todos los campos final
+@RequiredArgsConstructor
 public class AuthService {
 
     private final UserRepositoryPort userRepository;

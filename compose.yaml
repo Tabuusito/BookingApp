@@ -4,33 +4,32 @@ services:
       args:
         APP_PORT: 8080
     ports:
-      - "8080:8080" # Mapea el puerto de la app (ajusta si usas otro APP_PORT)
-      - "5005:5005" # Mapea el puerto de depuración
+      - "8080:8080"
+      - "5005:5005"
     environment:
-      # Aquí van tus variables de entorno para Spring Boot
       SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/reservas
-      SPRING_DATASOURCE_USERNAME: root
-      SPRING_DATASOURCE_PASSWORD: root
-      JWT_SECRET: "TU_SECRETO_JWT_EN_BASE64_O_TEXTO_LARGO" # ¡Importante!
+      SPRING_DATASOURCE_USERNAME: myuser
+      SPRING_DATASOURCE_PASSWORD: secret
+      JWT_SECRET: "SECRETO_JWT_EN_BASE64_O_TEXTO_LARGO" #
       JWT_EXPIRATION_MS: 86400000
       # Para cambiar entre debug y prod sin reconstruir la imagen Docker:
-      JVM_OPTS_PROFILE: "debug" # o "prod"
+      JVM_OPTS_PROFILE: "debug"
     depends_on:
-      - db
-    # Opcional: healthcheck para la app
+      db:
+        condition: service_healthy
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:8080/actuator/health" ] # Asume que tienes actuator
+      test: [ "CMD", "curl", "-f", "http://localhost:8080/actuator/health" ]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 60s # Da tiempo a que la app arranque
 
-  mysql:
+  db:
     image: 'mysql:latest'
     environment:
-      - 'MYSQL_DATABASE=mydatabase'
+      - 'MYSQL_DATABASE=reservas'
       - 'MYSQL_PASSWORD=secret'
       - 'MYSQL_ROOT_PASSWORD=verysecret'
       - 'MYSQL_USER=myuser'
     ports:
-      - '3306'
+      - '3306:3306'
