@@ -1,13 +1,14 @@
 services:
   app:
     build:
+      context: .
       args:
         APP_PORT: 8080
     ports:
       - "8080:8080"
       - "5005:5005"
     environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/reservas
+      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/reservas?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
       SPRING_DATASOURCE_USERNAME: myuser
       SPRING_DATASOURCE_PASSWORD: secret
       JWT_SECRET: "SECRETO_JWT_EN_BASE64_O_TEXTO_LARGO" #
@@ -22,7 +23,7 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 60s # Da tiempo a que la app arranque
+      start_period: 120s
 
   db:
     image: 'mysql:latest'
@@ -32,4 +33,17 @@ services:
       - 'MYSQL_ROOT_PASSWORD=verysecret'
       - 'MYSQL_USER=myuser'
     ports:
-      - '3306:3306'
+      - '3307:3306'
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./docker/db/init:/docker-entrypoint-initdb.d:ro
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "mysqladmin" ,"ping", "-h", "localhost", "-u${MYSQL_USER}", "-p${MYSQL_PASSWORD}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 120s
+volumes:
+  db_data:
+

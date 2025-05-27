@@ -25,9 +25,10 @@ public class User {
     @Column(nullable = false, unique = true)
     private String email;
 
-    @Column(nullable = false)
+    //Spring mapea por defecto campos camelCase a snake_case por convención
+    @Column(name = "password_hash", nullable = false)
     private String passwordHash;
 
-    @Column(nullable = false)
-    private Boolean active;
+    @Column()
+    private Boolean active = Boolean.TRUE;
 }
