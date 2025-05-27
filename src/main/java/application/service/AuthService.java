@@ -61,4 +61,5 @@ public class AuthService {
         String username = authentication.getName();
         return userRepository.findByUsername(username).orElse(null);
     }
+
 }
