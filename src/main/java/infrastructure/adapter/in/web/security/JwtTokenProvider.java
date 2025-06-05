@@ -39,11 +39,10 @@ public class JwtTokenProvider {
     @PostConstruct
     public void init() {
         // Para mayor seguridad, se recomienda que la clave secreta sea aleatoria y suficientemente larga.
-        // Y si se almacena como Base64, debe ser decodificada.
         // Por ahora jwtSecretString es una cadena de texto simple:
         byte[] keyBytes = jwtSecretString.getBytes(StandardCharsets.UTF_8);
 
-        // Si jwtSecretString es una cadena Base64 (recomendado para prod):
+        // Si jwtSecretString es una cadena Base64 (para prod):
         //byte[] keyBytes = Decoders.BASE64.decode(jwtSecretString);
         this.key = Keys.hmacShaKeyFor(keyBytes);
     }

@@ -1,11 +1,10 @@
-package application.service;
+package infrastructure.adapter.in.web.security;
 
 import application.dto.AuthResponse;
 import application.dto.LoginRequest;
 import application.dto.RegisterRequest;
 import domain.model.User;
-import domain.port.out.UserRepositoryPort;
-import infrastructure.adapter.in.web.security.JwtTokenProvider;
+import domain.port.out.UserPersistencePort;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -18,7 +17,7 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class AuthService {
 
-    private final UserRepositoryPort userRepository;
+    private final UserPersistencePort userRepository;
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final JwtTokenProvider jwtTokenProvider;

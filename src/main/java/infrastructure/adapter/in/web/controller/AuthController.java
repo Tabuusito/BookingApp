@@ -3,7 +3,7 @@ package infrastructure.adapter.in.web.controller;
 import application.dto.AuthResponse;
 import application.dto.LoginRequest;
 import application.dto.RegisterRequest;
-import application.service.AuthService;
+import infrastructure.adapter.in.web.security.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
