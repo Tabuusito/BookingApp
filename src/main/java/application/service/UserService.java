@@ -10,12 +10,14 @@ public interface UserService {
 
     public User findByUsername(String username);
 
-    public User saveUser(User user);
+    public User createUser(User user);
+
+    public User updateUser(User user);
 
     public User findUserById(Long id);
 
+    public void deleteUser(Long id);
+
     public List<User> getAllUsers();
-
-
 
 }

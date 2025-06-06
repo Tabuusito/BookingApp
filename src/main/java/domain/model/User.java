@@ -17,4 +17,6 @@ public class User {
     private String passwordHash;
 
     private Boolean active;
+
+    private Role role;
 }

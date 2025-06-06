@@ -6,6 +6,7 @@ import infrastructure.adapter.in.web.security.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
@@ -18,7 +19,6 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
 @Configuration
 @EnableWebSecurity
@@ -52,39 +52,27 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
         http
-                .csrf((csrf) -> csrf.ignoringRequestMatchers(new AntPathRequestMatcher("/**")))// Deshabilita CSRF para APIs stateless
+                .csrf(AbstractHttpConfigurer::disable)
                 .cors(AbstractHttpConfigurer::disable)
                 .exceptionHandling(exception -> exception
                         .authenticationEntryPoint(authEntryPoint) // Manejo de errores de autenticación
                 )
                 .sessionManagement(session -> session
-                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS) // Sesión stateless para JWT
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
                 .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers("/api/auth/**").permitAll() // Permitir acceso público a endpoints de autenticación
-                        .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll() // Permitir Swagger UI
-                        .anyRequest().authenticated() // Cualquier otra petición requiere autenticación
+                        .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/user").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/user").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/user/**").hasRole("ADMIN")
+                        .anyRequest().authenticated()
                 )
-                .authenticationProvider(authenticationProvider()); // Usa proveedor de autenticación personalizado
+                .authenticationProvider(authenticationProvider());
 
-        // Añadir filtro JWT antes del filtro de autenticación de nombre de usuario/contraseña de Spring
         http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
-
-    // En el futuro valorar añadir un CommandLineRunner para inicializar roles para no hacerlo en SQL
-    /*
-    @Bean
-    public CommandLineRunner initRoles(RoleRepositoryPort roleRepository) {
-        return args -> {
-            if (roleRepository.findByName("ROLE_USER").isEmpty()) {
-                roleRepository.save(Role.builder().name("ROLE_USER").build());
-            }
-            if (roleRepository.findByName("ROLE_BUSINESS_ADMIN").isEmpty()) {
-                roleRepository.save(Role.builder().name("ROLE_BUSINESS_ADMIN").build());
-            }
-        };
-    }
-    */
 }

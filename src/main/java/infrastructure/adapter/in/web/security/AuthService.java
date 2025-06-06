@@ -3,6 +3,7 @@ package infrastructure.adapter.in.web.security;
 import application.dto.AuthResponse;
 import application.dto.LoginRequest;
 import application.dto.RegisterRequest;
+import domain.model.Role;
 import domain.model.User;
 import domain.port.out.UserPersistencePort;
 import lombok.RequiredArgsConstructor;
@@ -36,6 +37,7 @@ public class AuthService {
                 .email(request.getEmail())
                 .passwordHash(passwordEncoder.encode(request.getPassword()))
                 .active(Boolean.TRUE)
+                .role(Role.USER)
                 .build();
 
         return userRepository.save(newUser);

@@ -18,10 +18,7 @@ public class SpringSecurityUser implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        // Aquí es donde se mapearían los roles del dominio a GrantedAuthority.
-        // Por simplicidad, un rol fijo, pero en un sistema real,
-        // user.getRoles() si la entidad del dominio los tuviera.
-        return Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER"));
+        return Collections.singletonList(new SimpleGrantedAuthority(user.getRole().getAuthority()));
     }
 
     @Override

@@ -1,11 +1,28 @@
 DROP DATABASE reservas;
 CREATE DATABASE reservas;
-use reservas;
+USE reservas;
 
 CREATE TABLE usuarios (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
     username VARCHAR(255) NOT NULL UNIQUE,
     email VARCHAR(255) NOT NULL UNIQUE,
     password_hash VARCHAR(255) NOT NULL,
-    active BOOLEAN NOT NULL DEFAULT TRUE
+    active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+CREATE TABLE roles (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    role_name VARCHAR(255) NOT NULL UNIQUE,
+    description VARCHAR(500)
+);
+
+CREATE TABLE usuario_rol (
+    usuario_id BIGINT NOT NULL,
+    rol_id BIGINT NOT NULL,
+    PRIMARY KEY (usuario_id, rol_id),
+
+    FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE,
+    FOREIGN KEY (rol_id) REFERENCES roles(id) ON DELETE CASCADE
 );

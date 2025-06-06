@@ -1,5 +1,6 @@
 package infrastructure.adapter.out.persistence.entity;
 
+import domain.model.Role;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -23,6 +24,10 @@ public class UserEntity {
 
     @Column(name = "password_hash", nullable = false)
     private String passwordHash;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "role_name", nullable = false)
+    private Role role;
 
     @Column
     private Boolean active;
