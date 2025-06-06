@@ -1,11 +1,11 @@
-package application.service;
+package application.service.impl;
 
 import domain.exception.DuplicateUserInfoException;
 import domain.exception.UserNotFoundException;
 import domain.model.Role;
 import domain.model.User;
+import domain.port.in.UserService;
 import domain.port.out.UserPersistencePort;
-import infrastructure.config.SecurityConfig;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.context.SecurityContextHolder;

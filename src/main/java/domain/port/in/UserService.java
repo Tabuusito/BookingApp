@@ -1,4 +1,4 @@
-package application.service;
+package domain.port.in;
 
 import domain.model.User;
 import org.springframework.stereotype.Service;

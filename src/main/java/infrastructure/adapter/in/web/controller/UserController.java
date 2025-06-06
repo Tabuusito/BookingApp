@@ -1,6 +1,6 @@
 package infrastructure.adapter.in.web.controller;
 
-import application.service.UserService;
+import domain.port.in.UserService;
 import domain.model.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -8,7 +8,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/user")
