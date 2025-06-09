@@ -1,8 +1,8 @@
 package infrastructure.adapter.in.web.controller;
 
-import application.dto.AuthResponse;
-import application.dto.LoginRequest;
-import application.dto.RegisterRequest;
+import infrastructure.adapter.in.web.dto.AuthResponseDTO;
+import infrastructure.adapter.in.web.dto.LoginRequestDTO;
+import infrastructure.adapter.in.web.dto.RegisterRequestDTO;
 import infrastructure.adapter.in.web.security.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -21,7 +21,7 @@ public class AuthController {
     private final AuthService authService;
 
     @PostMapping("/register")
-    public ResponseEntity<String> registerUser(@Valid @RequestBody RegisterRequest request) {
+    public ResponseEntity<String> registerUser(@Valid @RequestBody RegisterRequestDTO request) {
         try {
             authService.registerUser(request);
             return new ResponseEntity<>("Usuario registrado exitosamente!", HttpStatus.CREATED);
@@ -33,8 +33,8 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<AuthResponse> loginUser(@Valid @RequestBody LoginRequest request) {
-        AuthResponse authResponse = authService.loginUser(request);
+    public ResponseEntity<AuthResponseDTO> loginUser(@Valid @RequestBody LoginRequestDTO request) {
+        AuthResponseDTO authResponse = authService.loginUser(request);
         return new ResponseEntity<>(authResponse, HttpStatus.OK);
     }
 }

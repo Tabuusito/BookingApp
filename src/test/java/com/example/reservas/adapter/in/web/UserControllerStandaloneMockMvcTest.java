@@ -5,6 +5,8 @@ import domain.model.Role;
 import domain.model.User;
 import domain.port.in.UserService;
 import infrastructure.adapter.in.web.controller.UserController;
+import infrastructure.adapter.in.web.dto.RegisterRequestDTO;
+import infrastructure.adapter.in.web.dto.UserUpdateDTO;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -13,6 +15,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.MediaType;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders; // Importante
 
@@ -34,15 +37,18 @@ class UserControllerStandaloneMockMvcTest {
     @Mock
     private UserService userServiceMock;
 
+    @Mock
+    private PasswordEncoder passwordEncoder;
+
     @InjectMocks
     private UserController userController;
 
-    private ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     private User user1;
     private User user2;
-    private User newUserRequest;
-    private User updateUserRequest;
+    private RegisterRequestDTO newUserRequest;
+    private UserUpdateDTO updateUserRequest;
 
     @BeforeEach
     void setUp() {
@@ -61,13 +67,12 @@ class UserControllerStandaloneMockMvcTest {
         user2.setEmail("test2@example.com");
         user2.setRole(Role.ADMIN);
 
-        newUserRequest = new User();
+        newUserRequest = new RegisterRequestDTO();
         newUserRequest.setUsername("newuser");
         newUserRequest.setEmail("new@example.com");
-        newUserRequest.setRole(Role.USER);
-        newUserRequest.setPasswordHash("password123");
+        newUserRequest.setPassword("password123");
 
-        updateUserRequest = new User();
+        updateUserRequest = new UserUpdateDTO();
         updateUserRequest.setUsername("updateduser");
         updateUserRequest.setEmail("updated@example.com");
     }
@@ -129,7 +134,7 @@ class UserControllerStandaloneMockMvcTest {
         User createdUser = new User();
         createdUser.setId(3L);
         createdUser.setUsername(newUserRequest.getUsername());
-        // ... resto de los campos ...
+        createdUser.setPasswordHash(passwordEncoder.encode("password123"));
 
         when(userServiceMock.createUser(any(User.class))).thenReturn(createdUser);
 

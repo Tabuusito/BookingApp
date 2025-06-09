@@ -2,6 +2,11 @@ package infrastructure.adapter.in.web.controller;
 
 import domain.port.in.UserService;
 import domain.model.User;
+import infrastructure.adapter.in.web.dto.AdminUserCreationDTO;
+import infrastructure.adapter.in.web.dto.UserResponseDTO;
+import infrastructure.adapter.in.web.dto.UserUpdateDTO;
+import infrastructure.adapter.in.web.mapper.UserDTOMapper;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -16,21 +21,24 @@ public class UserController {
 
     private final UserService userService;
 
+    private final UserDTOMapper userDTOMapper;
+
     @GetMapping()
-    public ResponseEntity<List<User>> getAllUsers() {
+    public ResponseEntity<List<UserResponseDTO>> getAllUsers() {
         try {
-            return new ResponseEntity<>(userService.getAllUsers(), HttpStatus.OK);
+            return new ResponseEntity<>(userService.getAllUsers().stream().map(userDTOMapper::toDTO).toList(), HttpStatus.OK);
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<User> getUserById(@PathVariable Long id) {
+    public ResponseEntity<UserResponseDTO> getUserById(@PathVariable Long id) {
         try {
             User user = userService.findUserById(id);
+            UserResponseDTO responseDTO = userDTOMapper.toDTO(user);
             if (user != null){
-                return new ResponseEntity<>(user, HttpStatus.OK);
+                return new ResponseEntity<>(responseDTO, HttpStatus.OK);
             }
             else return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } catch (Exception e) {
@@ -39,10 +47,13 @@ public class UserController {
     }
 
     @PostMapping
-    public ResponseEntity<User> createUser(@RequestBody User newUser) {
+    public ResponseEntity<UserResponseDTO> createUser(@Valid @RequestBody AdminUserCreationDTO adminUserCreationDTO) {
         try {
+
+            User newUser = userDTOMapper.toDomain(adminUserCreationDTO);
             User createdUser = userService.createUser(newUser);
-            return new ResponseEntity<>(createdUser, HttpStatus.CREATED);
+            UserResponseDTO responseDTO = userDTOMapper.toDTO(createdUser);
+            return new ResponseEntity<>(responseDTO, HttpStatus.CREATED);
         } catch (RuntimeException e) {
             return new ResponseEntity<>(HttpStatus.CONFLICT);
         } catch (Exception e) {
@@ -51,11 +62,14 @@ public class UserController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<User> updateUser(@PathVariable Long id, @RequestBody User updatedUser) {
+    public ResponseEntity<UserResponseDTO> updateUser(@PathVariable Long id,@Valid @RequestBody UserUpdateDTO updatedUserDTO) {
         try {
-            updatedUser.setId(id);
-            User user = userService.updateUser(updatedUser);
-            return new ResponseEntity<>(user, HttpStatus.OK);
+            updatedUserDTO.setId(id);
+            User userToUpdate = userDTOMapper.toDomain(updatedUserDTO);
+            User user = userService.updateUser(userToUpdate);
+            UserResponseDTO responseDTO = userDTOMapper.toDTO(user);
+
+            return new ResponseEntity<>(responseDTO, HttpStatus.OK);
         } catch (RuntimeException e) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } catch (Exception e) {

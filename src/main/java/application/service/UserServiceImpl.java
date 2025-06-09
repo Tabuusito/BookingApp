@@ -1,4 +1,4 @@
-package application.service.impl;
+package application.service;
 
 import domain.exception.DuplicateUserInfoException;
 import domain.exception.UserNotFoundException;
@@ -30,24 +30,47 @@ public class UserServiceImpl implements UserService {
                 .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado con nombre: " + username));
     }
 
-    public User createUser(User user) {
-        if (userPersistencePort.existsByUsername(user.getUsername())) {
+
+    public User createUser(User newUser) {
+
+        String authenticatedUsername = SecurityContextHolder.getContext().getAuthentication().getName();
+        User authenticatedUser = userPersistencePort.findByUsername(authenticatedUsername)
+                .orElseThrow(() -> new UserNotFoundException("Usuario autenticado no encontrado."));
+        boolean isAdmin = authenticatedUser.getRole() == Role.ADMIN;
+        if (!isAdmin) {
+            throw new AccessDeniedException("No tienes permiso para crear usuarios.");
+        }
+        if (userPersistencePort.existsByUsername(newUser.getUsername())) {
             throw new RuntimeException("Nombre de usuario ya existe");
         }
-        if (userPersistencePort.existsByEmail(user.getEmail())) {
+        if (userPersistencePort.existsByEmail(newUser.getEmail())) {
             throw new RuntimeException("Email ya existe");
         }
-        if (user.getPasswordHash() != null && !user.getPasswordHash().isBlank()) {
-            user.setPasswordHash(passwordEncoder.encode(user.getPasswordHash()));
+        User userToPersist = new User();
+
+        if (newUser.getUsername() != null && !newUser.getUsername().isBlank()) {
+            userToPersist.setUsername(newUser.getUsername());
         }
-        return userPersistencePort.save(user);
+        if (newUser.getEmail() != null && !newUser.getEmail().isBlank()) {
+            userToPersist.setEmail(newUser.getEmail());
+        }
+        if (newUser.getPasswordHash() != null && !newUser.getPasswordHash().isBlank()) {
+            userToPersist.setPasswordHash(passwordEncoder.encode(newUser.getPasswordHash()));
+        }
+        if (newUser.getRole() != null) {
+            userToPersist.setRole(newUser.getRole());
+        }
+        if (newUser.getActive() != null) {
+            userToPersist.setActive(newUser.getActive());
+        }
+        return userPersistencePort.save(userToPersist);
     }
 
     @Transactional
     public User updateUser(User userToUpdate) {
         Long userIdToUpdate = userToUpdate.getId();
         if (userIdToUpdate == null) {
-            throw new IllegalArgumentException("User ID must be provided for an update.");
+            throw new IllegalArgumentException("Debe proveerse una ID para actualizar.");
         }
 
         User existingUser = userPersistencePort.findById(userIdToUpdate)
@@ -61,17 +84,20 @@ public class UserServiceImpl implements UserService {
         if (!isAdmin && !Objects.equals(authenticatedUser.getId(), userIdToUpdate)) {
             throw new AccessDeniedException("No tienes permiso para actualizar este usuario.");
         }
+        if(!isAdmin && (userToUpdate.getRole() != Role.USER)){
+            throw new AccessDeniedException("No tienes permiso para actualizar roles.");
+        }
 
 
         if (userToUpdate.getUsername() != null && !userToUpdate.getUsername().isBlank() && !userToUpdate.getUsername().equals(existingUser.getUsername())) {
-            if (userPersistencePort.findByUsername(userToUpdate.getUsername()).isPresent()) {
+            if (userPersistencePort.existsByUsername(userToUpdate.getUsername())) {
                 throw new DuplicateUserInfoException("El username '" + userToUpdate.getUsername() + "' ya está en uso.");
             }
             existingUser.setUsername(userToUpdate.getUsername());
         }
 
         if (userToUpdate.getEmail() != null && !userToUpdate.getEmail().isBlank() && !userToUpdate.getEmail().equals(existingUser.getEmail())) {
-            if (userPersistencePort.findByEmail(userToUpdate.getEmail()).isPresent()) {
+            if (userPersistencePort.existsByEmail(userToUpdate.getEmail())) {
                 throw new DuplicateUserInfoException("El email '" + userToUpdate.getEmail() + "' ya está en uso.");
             }
             existingUser.setEmail(userToUpdate.getEmail());
@@ -86,6 +112,10 @@ public class UserServiceImpl implements UserService {
            existingUser.setRole(userToUpdate.getRole());
         }
 
+        if (isAdmin && userToUpdate.getActive() != null) {
+            existingUser.setActive(userToUpdate.getActive());
+        }
+
         return userPersistencePort.save(existingUser);
     }
 
@@ -97,7 +127,7 @@ public class UserServiceImpl implements UserService {
                 .orElseThrow(() -> new UserNotFoundException("Usuario autenticado no encontrado."));
         boolean isAdmin = authenticatedUser.getRole() == Role.ADMIN;
         if (!isAdmin && !Objects.equals(authenticatedUser.getId(), id)) {
-            throw new AccessDeniedException("No tienes permiso para actualizar este usuario.");
+            throw new AccessDeniedException("No tienes permiso para acceder a este usuario.");
         }
 
         return userPersistencePort.findById(id)
@@ -116,7 +146,7 @@ public class UserServiceImpl implements UserService {
                 .orElseThrow(() -> new UserNotFoundException("Usuario autenticado no encontrado."));
         boolean isAdmin = authenticatedUser.getRole() == Role.ADMIN;
         if (!isAdmin) {
-            throw new AccessDeniedException("No tienes permiso para listar los usuario.");
+            throw new AccessDeniedException("No tienes permiso para listar los usuarios.");
         }
 
         return userPersistencePort.findAll();

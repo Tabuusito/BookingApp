@@ -1,8 +1,8 @@
 package infrastructure.adapter.in.web.security;
 
-import application.dto.AuthResponse;
-import application.dto.LoginRequest;
-import application.dto.RegisterRequest;
+import infrastructure.adapter.in.web.dto.AuthResponseDTO;
+import infrastructure.adapter.in.web.dto.LoginRequestDTO;
+import infrastructure.adapter.in.web.dto.RegisterRequestDTO;
 import domain.model.Role;
 import domain.model.User;
 import domain.port.out.UserPersistencePort;
@@ -23,7 +23,7 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
     private final JwtTokenProvider jwtTokenProvider;
 
-    public User registerUser(RegisterRequest request) {
+    public User registerUser(RegisterRequestDTO request) {
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new IllegalArgumentException("El email ya está registrado");
         }
@@ -43,7 +43,7 @@ public class AuthService {
         return userRepository.save(newUser);
     }
 
-    public AuthResponse loginUser(LoginRequest request) {
+    public AuthResponseDTO loginUser(LoginRequestDTO request) {
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword())
         );
@@ -51,7 +51,7 @@ public class AuthService {
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
         String jwt = jwtTokenProvider.generateToken(authentication);
-        return new AuthResponse(jwt);
+        return new AuthResponseDTO(jwt);
     }
 
     public User getCurrentAuthenticatedUser() {

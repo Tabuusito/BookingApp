@@ -1,9 +1,13 @@
 package com.example.reservas.adapter.in.web;
 
+import domain.exception.DuplicateUserInfoException;
 import domain.model.Role;
 import domain.model.User;
 import domain.port.in.UserService;
 import infrastructure.adapter.in.web.controller.UserController;
+import infrastructure.adapter.in.web.dto.AdminUserCreationDTO;
+import infrastructure.adapter.in.web.dto.UserResponseDTO;
+import infrastructure.adapter.in.web.dto.UserUpdateDTO;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -13,6 +17,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.Arrays;
 import java.util.List;
@@ -26,6 +31,9 @@ class UserControllerTest {
 
     @Mock
     private UserService userServiceMock;
+
+    @Mock
+    private PasswordEncoder passwordEncoder;
 
     @InjectMocks
     private UserController userController;
@@ -55,13 +63,13 @@ class UserControllerTest {
         List<User> users = Arrays.asList(user1, user2);
         when(userServiceMock.getAllUsers()).thenReturn(users);
 
-        ResponseEntity<List<User>> response = userController.getAllUsers();
+        ResponseEntity<List<UserResponseDTO>> response = userController.getAllUsers();
 
         assertNotNull(response);
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
         assertEquals(2, response.getBody().size());
-        assertEquals("testuser1", response.getBody().get(0).getUsername());
+        assertEquals("testuser1", response.getBody().getFirst().getUsername());
         verify(userServiceMock, times(1)).getAllUsers(); // Verifica que el método del mock fue llamado
     }
 
@@ -71,7 +79,7 @@ class UserControllerTest {
 
         when(userServiceMock.getAllUsers()).thenThrow(new RuntimeException("Service error"));
 
-        ResponseEntity<List<User>> response = userController.getAllUsers();
+        ResponseEntity<List<UserResponseDTO>> response = userController.getAllUsers();
 
         assertNotNull(response);
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
@@ -86,7 +94,7 @@ class UserControllerTest {
 
         when(userServiceMock.findUserById(1L)).thenReturn(user1);
 
-        ResponseEntity<User> response = userController.getUserById(1L);
+        ResponseEntity<UserResponseDTO> response = userController.getUserById(1L);
 
         assertNotNull(response);
         assertEquals(HttpStatus.OK, response.getStatusCode());
@@ -101,7 +109,7 @@ class UserControllerTest {
 
         when(userServiceMock.findUserById(99L)).thenReturn(null);
 
-        ResponseEntity<User> response = userController.getUserById(99L);
+        ResponseEntity<UserResponseDTO> response = userController.getUserById(99L);
 
         assertNotNull(response);
         assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
@@ -116,7 +124,7 @@ class UserControllerTest {
         when(userServiceMock.findUserById(1L)).thenThrow(new RuntimeException("Service error"));
 
         // Act
-        ResponseEntity<User> response = userController.getUserById(1L);
+        ResponseEntity<UserResponseDTO> response = userController.getUserById(1L);
 
         // Assert
         assertNotNull(response);
@@ -127,20 +135,23 @@ class UserControllerTest {
     @Test
     @DisplayName("POST /api/user - Should create user and return HTTP 201 Created")
     void createUser_ShouldReturnCreatedUser() {
-        User newUserRequest = new User(); // Simula el request body
+        AdminUserCreationDTO newUserRequest = new AdminUserCreationDTO(); // Simula el request body
         newUserRequest.setUsername("newuser");
         newUserRequest.setEmail("new@example.com");
-        newUserRequest.setRole(Role.USER);
+        newUserRequest.setPassword("password");
+        newUserRequest.setRole("ADMIN");
+        newUserRequest.setActive(true);
 
         User createdUser = new User(); // Simula el usuario devuelto por el servicio
         createdUser.setId(3L);
         createdUser.setUsername("newuser");
         createdUser.setEmail("new@example.com");
+        createdUser.setPasswordHash(passwordEncoder.encode("password"));
         createdUser.setRole(Role.USER);
 
         when(userServiceMock.createUser(any(User.class))).thenReturn(createdUser);
 
-        ResponseEntity<User> response = userController.createUser(newUserRequest);
+        ResponseEntity<UserResponseDTO> response = userController.createUser(newUserRequest);
 
         assertNotNull(response);
         assertEquals(HttpStatus.CREATED, response.getStatusCode());
@@ -153,13 +164,12 @@ class UserControllerTest {
     @Test
     @DisplayName("POST /api/user - Should return HTTP 409 Conflict if service throws RuntimeException (e.g., duplicate)")
     void createUser_ServiceThrowsRuntimeException_ShouldReturnConflict() {
-        User newUserRequest = new User();
+        AdminUserCreationDTO newUserRequest = new AdminUserCreationDTO();
         newUserRequest.setUsername("existinguser");
 
-        // Simula que el servicio lanza una RuntimeException (podría ser una DuplicateUserInfoException específica)
-        when(userServiceMock.createUser(any(User.class))).thenThrow(new RuntimeException("User already exists"));
+        when(userServiceMock.createUser(any(User.class))).thenThrow(new DuplicateUserInfoException("User already exists"));
 
-        ResponseEntity<User> response = userController.createUser(newUserRequest);
+        ResponseEntity<UserResponseDTO> response = userController.createUser(newUserRequest);
 
         assertNotNull(response);
         assertEquals(HttpStatus.CONFLICT, response.getStatusCode());
@@ -170,7 +180,7 @@ class UserControllerTest {
     @Test
     @DisplayName("PUT /api/user/{id} - Should update user and return HTTP 200 OK")
     void updateUser_ShouldReturnUpdatedUser() {
-        User updatedUserRequest = new User(); // Simula el request body
+        UserUpdateDTO updatedUserRequest = new UserUpdateDTO(); // Simula el request body
         updatedUserRequest.setUsername("updateduser");
         // No se necesita setear el ID aquí porque el controlador lo hace con updatedUser.setId(id);
 
@@ -181,7 +191,7 @@ class UserControllerTest {
 
         when(userServiceMock.updateUser(any(User.class))).thenReturn(userAfterUpdate);
 
-        ResponseEntity<User> response = userController.updateUser(1L, updatedUserRequest);
+        ResponseEntity<UserResponseDTO> response = userController.updateUser(1L, updatedUserRequest);
 
         assertNotNull(response);
         assertEquals(HttpStatus.OK, response.getStatusCode());
@@ -195,13 +205,13 @@ class UserControllerTest {
     @Test
     @DisplayName("PUT /api/user/{id} - Should return HTTP 404 Not Found if service throws RuntimeException (e.g., UserNotFound)")
     void updateUser_UserNotFound_ShouldReturnNotFound() {
-        User updatedUserRequest = new User();
+        UserUpdateDTO updatedUserRequest = new UserUpdateDTO();
         updatedUserRequest.setUsername("updateduser");
 
         // Simula que el servicio lanza una RuntimeException (podría ser una UserNotFoundException específica)
         when(userServiceMock.updateUser(any(User.class))).thenThrow(new RuntimeException("User not found"));
 
-        ResponseEntity<User> response = userController.updateUser(99L, updatedUserRequest);
+        ResponseEntity<UserResponseDTO> response = userController.updateUser(99L, updatedUserRequest);
 
         assertNotNull(response);
         assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());

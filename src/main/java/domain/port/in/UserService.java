@@ -1,6 +1,7 @@
 package domain.port.in;
 
 import domain.model.User;
+import infrastructure.adapter.in.web.dto.RegisterRequestDTO;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
