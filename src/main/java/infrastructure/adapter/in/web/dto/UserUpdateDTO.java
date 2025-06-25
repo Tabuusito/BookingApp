@@ -26,4 +26,6 @@ public class UserUpdateDTO {
     private String email;
 
     private String role;
+
+    private boolean active;
 }

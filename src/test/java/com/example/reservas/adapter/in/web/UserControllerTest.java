@@ -1,6 +1,7 @@
 package com.example.reservas.adapter.in.web;
 
 import domain.exception.DuplicateUserInfoException;
+import domain.exception.UserNotFoundException;
 import domain.model.Role;
 import domain.model.User;
 import domain.port.in.UserService;
@@ -8,6 +9,7 @@ import infrastructure.adapter.in.web.controller.UserController;
 import infrastructure.adapter.in.web.dto.AdminUserCreationDTO;
 import infrastructure.adapter.in.web.dto.UserResponseDTO;
 import infrastructure.adapter.in.web.dto.UserUpdateDTO;
+import infrastructure.adapter.in.web.mapper.UserDTOMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -33,13 +35,20 @@ class UserControllerTest {
     private UserService userServiceMock;
 
     @Mock
-    private PasswordEncoder passwordEncoder;
+    private PasswordEncoder passwordEncoderMock;
+
+    @Mock
+    private UserDTOMapper userDTOMapperMock;
 
     @InjectMocks
     private UserController userController;
 
     private User user1;
     private User user2;
+
+    private UserResponseDTO userResponse1;
+    private UserResponseDTO userResponse2;
+
 
     @BeforeEach
     void setUp() {
@@ -55,6 +64,18 @@ class UserControllerTest {
         user2.setUsername("testuser2");
         user2.setEmail("test2@example.com");
         user2.setRole(Role.ADMIN);
+
+        userResponse1 = new UserResponseDTO();
+        userResponse1.setId(1L);
+        userResponse1.setUsername("testuser1");
+        userResponse1.setEmail("test1@example.com");
+        userResponse1.setRole("USER");
+
+        userResponse2 = new UserResponseDTO();
+        userResponse2.setId(2L);
+        userResponse2.setUsername("testuser2");
+        userResponse2.setEmail("test2@example.com");
+        userResponse2.setRole("ADMIN");
     }
 
     @Test
@@ -62,6 +83,9 @@ class UserControllerTest {
     void getAllUsers_ShouldReturnAllUsers() {
         List<User> users = Arrays.asList(user1, user2);
         when(userServiceMock.getAllUsers()).thenReturn(users);
+        when(userDTOMapperMock.toDTO(user1)).thenReturn(userResponse1);
+        when(userDTOMapperMock.toDTO(user2)).thenReturn(userResponse2);
+
 
         ResponseEntity<List<UserResponseDTO>> response = userController.getAllUsers();
 
@@ -70,7 +94,7 @@ class UserControllerTest {
         assertNotNull(response.getBody());
         assertEquals(2, response.getBody().size());
         assertEquals("testuser1", response.getBody().getFirst().getUsername());
-        verify(userServiceMock, times(1)).getAllUsers(); // Verifica que el método del mock fue llamado
+        verify(userServiceMock, times(1)).getAllUsers();
     }
 
     @Test
@@ -93,6 +117,7 @@ class UserControllerTest {
     void getUserById_WhenUserFound_ShouldReturnUser() {
 
         when(userServiceMock.findUserById(1L)).thenReturn(user1);
+        when(userDTOMapperMock.toDTO(any(User.class))).thenReturn(userResponse1);
 
         ResponseEntity<UserResponseDTO> response = userController.getUserById(1L);
 
@@ -135,21 +160,31 @@ class UserControllerTest {
     @Test
     @DisplayName("POST /api/user - Should create user and return HTTP 201 Created")
     void createUser_ShouldReturnCreatedUser() {
-        AdminUserCreationDTO newUserRequest = new AdminUserCreationDTO(); // Simula el request body
+        AdminUserCreationDTO newUserRequest = new AdminUserCreationDTO();
         newUserRequest.setUsername("newuser");
         newUserRequest.setEmail("new@example.com");
         newUserRequest.setPassword("password");
         newUserRequest.setRole("ADMIN");
         newUserRequest.setActive(true);
 
-        User createdUser = new User(); // Simula el usuario devuelto por el servicio
+        User createdUser = new User();
         createdUser.setId(3L);
         createdUser.setUsername("newuser");
         createdUser.setEmail("new@example.com");
-        createdUser.setPasswordHash(passwordEncoder.encode("password"));
-        createdUser.setRole(Role.USER);
+        createdUser.setPasswordHash("passwordHash");
+        createdUser.setRole(Role.ADMIN);
+        createdUser.setActive(true);
+
+        UserResponseDTO userResponse = new UserResponseDTO();
+        userResponse.setId(3L);
+        userResponse.setUsername("newuser");
+        userResponse.setEmail("new@example.com");
+        userResponse.setRole("ADMIN");
+        userResponse.setActive(true);
 
         when(userServiceMock.createUser(any(User.class))).thenReturn(createdUser);
+        when(userDTOMapperMock.toDomain(any(AdminUserCreationDTO.class))).thenReturn(createdUser);
+        when(userDTOMapperMock.toDTO(any(User.class))).thenReturn(userResponse);
 
         ResponseEntity<UserResponseDTO> response = userController.createUser(newUserRequest);
 
@@ -168,6 +203,7 @@ class UserControllerTest {
         newUserRequest.setUsername("existinguser");
 
         when(userServiceMock.createUser(any(User.class))).thenThrow(new DuplicateUserInfoException("User already exists"));
+        when(userDTOMapperMock.toDomain(any(AdminUserCreationDTO.class))).thenReturn(new User());
 
         ResponseEntity<UserResponseDTO> response = userController.createUser(newUserRequest);
 
@@ -180,7 +216,7 @@ class UserControllerTest {
     @Test
     @DisplayName("PUT /api/user/{id} - Should update user and return HTTP 200 OK")
     void updateUser_ShouldReturnUpdatedUser() {
-        UserUpdateDTO updatedUserRequest = new UserUpdateDTO(); // Simula el request body
+        UserUpdateDTO updatedUserRequest = new UserUpdateDTO();
         updatedUserRequest.setUsername("updateduser");
         // No se necesita setear el ID aquí porque el controlador lo hace con updatedUser.setId(id);
 
@@ -189,7 +225,15 @@ class UserControllerTest {
         userAfterUpdate.setUsername("updateduser");
         userAfterUpdate.setRole(Role.USER);
 
+        UserResponseDTO userResponse = new UserResponseDTO();
+        userResponse.setId(1L);
+        userResponse.setUsername("updateduser");
+        userResponse.setRole("USER");
+
+
         when(userServiceMock.updateUser(any(User.class))).thenReturn(userAfterUpdate);
+        when(userDTOMapperMock.toDTO(any(User.class))).thenReturn((userResponse));
+        when(userDTOMapperMock.toDomain(any(UserUpdateDTO.class))).thenReturn(userAfterUpdate);
 
         ResponseEntity<UserResponseDTO> response = userController.updateUser(1L, updatedUserRequest);
 
@@ -203,13 +247,16 @@ class UserControllerTest {
     }
 
     @Test
-    @DisplayName("PUT /api/user/{id} - Should return HTTP 404 Not Found if service throws RuntimeException (e.g., UserNotFound)")
+    @DisplayName("PUT /api/user/{id} - Should return HTTP 404 Not Found if service throws UserNotFoundException")
     void updateUser_UserNotFound_ShouldReturnNotFound() {
         UserUpdateDTO updatedUserRequest = new UserUpdateDTO();
         updatedUserRequest.setUsername("updateduser");
 
-        // Simula que el servicio lanza una RuntimeException (podría ser una UserNotFoundException específica)
-        when(userServiceMock.updateUser(any(User.class))).thenThrow(new RuntimeException("User not found"));
+        User updatedUser = new User();
+        updatedUser.setUsername("updateduser");
+
+        when(userServiceMock.updateUser(any(User.class))).thenThrow(new UserNotFoundException("User not found"));
+        when(userDTOMapperMock.toDomain(any(UserUpdateDTO.class))).thenReturn(updatedUser);
 
         ResponseEntity<UserResponseDTO> response = userController.updateUser(99L, updatedUserRequest);
 

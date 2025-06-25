@@ -135,6 +135,13 @@ public class UserServiceImpl implements UserService {
     }
 
     public void deleteUser(Long id){
+        String authenticatedUsername = SecurityContextHolder.getContext().getAuthentication().getName();
+        User authenticatedUser = userPersistencePort.findByUsername(authenticatedUsername)
+                .orElseThrow(() -> new UserNotFoundException("Usuario autenticado no encontrado."));
+        boolean isAdmin = authenticatedUser.getRole() == Role.ADMIN;
+        if (!isAdmin && !Objects.equals(authenticatedUser.getId(), id)) {
+            throw new AccessDeniedException("No tienes permiso para acceder a este usuario.");
+        }
         userPersistencePort.deleteById(id);
     }
 

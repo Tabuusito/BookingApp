@@ -2,6 +2,7 @@ package infrastructure.adapter.in.web.dto;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -30,6 +31,6 @@ import lombok.NoArgsConstructor;
         @NotBlank
         private String role;
 
-        @NotBlank
+        @NotNull(message = "El estado activo no puede ser nulo")
         private boolean active;
     }

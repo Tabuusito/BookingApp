@@ -18,16 +18,19 @@ public interface UserDTOMapper {
 
     UserDTOMapper INSTANCE = Mappers.getMapper(UserDTOMapper.class);
 
-    @Mapping(source = "role", target = "role", qualifiedByName = "mapRoleEnumToString") // Convierte Role (enum) a String
+    @Mapping(source = "role", target = "role", qualifiedByName = "mapRoleEnumToString")
     UserResponseDTO toDTO(User user);
 
     List<UserResponseDTO> toDTOList(List<User> users);
 
     @Mapping(target = "id", ignore = true)
-    @Mapping(source = "password", target = "passwordHash") // <--- ¡ESTA ES LA LÍNEA CLAVE!
+    @Mapping(source = "password", target = "passwordHash")
     @Mapping(source = "role", target = "role", qualifiedByName = "mapRoleStringToEnum")
     User toDomain(AdminUserCreationDTO adminUserCreationDTO);
 
+    @Mapping(target = "id", ignore = true)
+    @Mapping(source = "password", target = "passwordHash")
+    @Mapping(source = "role", target = "role", qualifiedByName = "mapRoleStringToEnum")
     User toDomain(UserUpdateDTO userUpdateDTO);
 
     @Named("mapRoleStringToEnum")
@@ -47,8 +50,7 @@ public interface UserDTOMapper {
         if (role == null) {
             return null;
         }
-        return role.name(); // Convierte el enum a su nombre de String (ej. Role.ADMIN -> "ADMIN")
+        return role.name();
     }
 
-    List<User> toDomainList(List<UserResponseDTO> userResponseDTOs); // Renombré el parámetro para claridad
 }
