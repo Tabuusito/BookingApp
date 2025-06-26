@@ -11,7 +11,6 @@ import org.mapstruct.Named;
 import org.mapstruct.factory.Mappers;
 
 import java.util.Arrays;
-import java.util.List;
 
 @Mapper(componentModel = "spring")
 public interface UserDTOMapper {
@@ -20,8 +19,6 @@ public interface UserDTOMapper {
 
     @Mapping(source = "role", target = "role", qualifiedByName = "mapRoleEnumToString")
     UserResponseDTO toDTO(User user);
-
-    List<UserResponseDTO> toDTOList(List<User> users);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(source = "password", target = "passwordHash")

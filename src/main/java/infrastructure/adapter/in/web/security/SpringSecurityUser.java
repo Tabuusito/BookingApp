@@ -19,6 +19,8 @@ public class SpringSecurityUser implements UserDetails {
         return Collections.singletonList(new SimpleGrantedAuthority(user.getRole().getAuthority()));
     }
 
+    public Long getId() { return user.getId(); }
+
     @Override
     public String getPassword() {
         return user.getPasswordHash();
