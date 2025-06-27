@@ -63,10 +63,16 @@ public class SecurityConfig {
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
+
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.GET, "/api/user").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.POST, "/api/user").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.DELETE, "/api/user/**").hasRole("ADMIN")
+
+                        .requestMatchers("/api/user/**").hasRole("ADMIN")
+
+                        .requestMatchers(HttpMethod.GET, "/api/services", "/api/services/**").permitAll()
+                        .requestMatchers("/api/services/**").hasRole("ADMIN")
+
+                        .requestMatchers("/api/reservations/**").authenticated()
+
                         .anyRequest().authenticated()
                 )
                 .authenticationProvider(authenticationProvider());

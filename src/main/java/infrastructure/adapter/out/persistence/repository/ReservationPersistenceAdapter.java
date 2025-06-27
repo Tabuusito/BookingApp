@@ -111,4 +111,12 @@ public class ReservationPersistenceAdapter implements ReservationPersistencePort
                 ReservationStatus.CONFIRMED
         );
     }
+
+    @Override
+    public List<Reservation> findFutureReservationsByOfferedServiceId(Long serviceId) {
+        List<ReservationEntity> futureReservationEntities =
+                reservationJpaRepository.findByServiceServiceIdAndStartTimeAfter(serviceId, LocalDateTime.now());
+
+        return reservationMapper.toDomainList(futureReservationEntities);
+    }
 }

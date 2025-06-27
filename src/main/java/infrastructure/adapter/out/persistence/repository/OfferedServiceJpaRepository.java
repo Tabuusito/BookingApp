@@ -22,7 +22,7 @@ public interface OfferedServiceJpaRepository extends JpaRepository<OfferedServic
     @Modifying
     @Query("UPDATE OfferedServiceEntity s SET s.isActive = :isActive WHERE s.serviceId = :serviceId")
     int updateActiveStatus(@Param("serviceId") Long serviceId, @Param("isActive") boolean isActive);
-    // Este método devolverá el número de filas afectadas. El adaptador necesitará verificar si fue 1
-    // y luego, opcionalmente, recargar la entidad para devolver el objeto actualizado si el puerto lo requiere.
+
+    List<OfferedServiceEntity> findByNameContainingIgnoreCaseAndIsActive(String name, boolean isActive);
 
 }

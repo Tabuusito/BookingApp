@@ -27,8 +27,7 @@ public interface OfferedServiceDTOMapper {
 
     @Mapping(target = "serviceId", ignore = true)
     @Mapping(source = "defaultDurationSeconds", target = "defaultDuration", qualifiedByName = "secondsToDuration")
-    @Mapping(target = "active", source = "isActive")
-    void updateDomainFromDTO(UpdateOfferedServiceRequestDTO dto, @MappingTarget OfferedService offeredService);
+    OfferedService fromRequestDTO(UpdateOfferedServiceRequestDTO dto);
 
 
     @Named("durationToSeconds")

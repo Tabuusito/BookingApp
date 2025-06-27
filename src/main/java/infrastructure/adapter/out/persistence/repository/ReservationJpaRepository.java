@@ -61,4 +61,11 @@ public interface ReservationJpaRepository extends JpaRepository<ReservationEntit
             @Param("confirmedStatus") ReservationStatus confirmedStatus
     );
 
+    /**
+     * Busca entidades de reserva para un ID de servicio específico y cuya hora de inicio sea posterior a la hora actual.
+     * @param serviceId El ID del servicio.
+     * @param dateTime La fecha y hora actual para comparar.
+     * @return Una lista de entidades de reserva futuras para ese servicio.
+     */
+    List<ReservationEntity> findByServiceServiceIdAndStartTimeAfter(Long serviceId, LocalDateTime dateTime);
 }

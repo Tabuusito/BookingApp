@@ -1,6 +1,7 @@
 package domain.port.out;
 
 import domain.model.OfferedService;
+import domain.model.Reservation;
 
 import java.util.List;
 import java.util.Optional;
@@ -68,5 +69,14 @@ public interface OfferedServicePersistencePort {
      * @return el servicio actualizado, o Optional.empty() si no se encontró.
      */
     Optional<OfferedService> updateActiveStatus(Long serviceId, boolean isActive);
+
+    /**
+     * Busca servicios cuyo nombre
+     * contenga nameFragment filtrando por isActive si procede
+     * @param nameFragment el nombre parcial o completo del servicio a buscar.
+     * @param activeOnly filtro para seleccionar todos o sólo los activos.
+     * @return una lista de servicios.
+     */
+    List<OfferedService> findByNameContainingAndIsActive(String nameFragment, boolean activeOnly);
 
 }

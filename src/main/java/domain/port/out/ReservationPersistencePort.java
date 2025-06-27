@@ -100,4 +100,12 @@ public interface ReservationPersistencePort {
      */
     long countActiveReservationsForServiceInSlot(Long serviceId, LocalDateTime startTime, LocalDateTime endTime);
 
+    /**
+     * Busca reservas futuras asociadas a un servicio.
+     * @param serviceId el id del servicio ofrecido.
+     * @return una lista de reservas futuras.
+     */
+    List<Reservation> findFutureReservationsByOfferedServiceId(Long serviceId);
+
+
 }

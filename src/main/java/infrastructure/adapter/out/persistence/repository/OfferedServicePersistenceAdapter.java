@@ -71,4 +71,25 @@ public class OfferedServicePersistenceAdapter implements OfferedServicePersisten
         }
         return Optional.empty();
     }
+
+    /**
+     * Busca servicios cuyo nombre contenga nameFragment filtrando por isActive si procede.
+     * Si activeOnly es false, busca en todos los servicios.
+     * Si activeOnly es true, busca solo en los activos.
+     *
+     * @param nameFragment el nombre parcial o completo del servicio a buscar.
+     * @param activeOnly   filtro para seleccionar todos o sólo los activos.
+     * @return una lista de servicios.
+     */
+    @Override
+    public List<OfferedService> findByNameContainingAndIsActive(String nameFragment, boolean activeOnly) {
+        List<OfferedServiceEntity> entities;
+        if (activeOnly) {
+            entities = offeredServiceJpaRepository.findByNameContainingIgnoreCaseAndIsActive(nameFragment, true);
+        } else {
+            entities = offeredServiceJpaRepository.findByNameContainingIgnoreCase(nameFragment);
+        }
+
+        return offeredServiceMapper.toDomainList(entities);
+    }
 }

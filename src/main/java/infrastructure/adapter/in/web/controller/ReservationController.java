@@ -45,7 +45,7 @@ public class ReservationController {
                 .anyMatch(grantedAuthority -> grantedAuthority.getAuthority().equals("ROLE_ADMIN"));
     }
 
-    // --- Endpoints Modificados ---
+    // --- Endpoints ---
 
     @PostMapping
     public ResponseEntity<ReservationResponseDTO> createReservation(
