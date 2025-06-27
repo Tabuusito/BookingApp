@@ -68,4 +68,13 @@ public interface ReservationJpaRepository extends JpaRepository<ReservationEntit
      * @return Una lista de entidades de reserva futuras para ese servicio.
      */
     List<ReservationEntity> findByServiceServiceIdAndStartTimeAfter(Long serviceId, LocalDateTime dateTime);
+
+    /**
+     * Busca entidades de reserva futuras para un ID de usuario específico.
+     * Atraviesa la relación ReservationEntity -> UserEntity -> id.
+     * @param userId El ID del usuario.
+     * @param currentTime La fecha y hora actual para comparar.
+     * @return Una lista de entidades de reserva futuras para ese usuario.
+     */
+    List<ReservationEntity> findByUserIdAndStartTimeAfter(Long userId, LocalDateTime currentTime);
 }

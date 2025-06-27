@@ -80,15 +80,13 @@ public interface ReservationPersistencePort {
      */
     List<Reservation> findByStatus(ReservationStatus status);
 
-    // --- Métodos adicionales que podrían ser útiles ---
 
     /**
      * Busca reservas futuras para un usuario.
      * @param user el usuario.
-     * @param currentTime la fecha y hora actual, para determinar qué es "futuro".
      * @return una lista de reservas futuras.
      */
-    List<Reservation> findFutureReservationsByUser(User user, LocalDateTime currentTime);
+    List<Reservation> findFutureReservationsByUser(User user);
 
     /**
      * Cuenta el número de reservas activas (PENDING o CONFIRMED) para un servicio en un slot de tiempo.
@@ -106,6 +104,13 @@ public interface ReservationPersistencePort {
      * @return una lista de reservas futuras.
      */
     List<Reservation> findFutureReservationsByOfferedServiceId(Long serviceId);
+
+    /**
+     * Busca reservas futuras para un usuario específico usando su ID.
+     * @param userId El ID del usuario.
+     * @return Una lista de reservas futuras.
+     */
+    List<Reservation> findFutureReservationsByUserId(Long userId);
 
 
 }

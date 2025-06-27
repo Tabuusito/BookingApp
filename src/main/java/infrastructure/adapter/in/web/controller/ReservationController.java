@@ -6,6 +6,7 @@ import infrastructure.adapter.in.web.dto.CreateReservationRequestDTO;
 import infrastructure.adapter.in.web.dto.ReservationResponseDTO;
 import infrastructure.adapter.in.web.dto.UpdateReservationRequestDTO;
 import infrastructure.adapter.in.web.mapper.ReservationDTOMapper;
+import infrastructure.adapter.in.web.security.RequesterContext;
 import infrastructure.adapter.in.web.security.SpringSecurityUser;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -14,12 +15,15 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/reservations")
@@ -29,20 +33,21 @@ public class ReservationController {
     private final ReservationService reservationService;
     private final ReservationDTOMapper reservationDTOMapper;
 
-    private Optional<Long> getAuthenticatedUserId(Authentication authentication) {
-        if (authentication != null && authentication.isAuthenticated() && authentication.getPrincipal() instanceof SpringSecurityUser) {
-            SpringSecurityUser userDetails = (SpringSecurityUser) authentication.getPrincipal();
-            return Optional.ofNullable(userDetails.getId());
-        }
-        return Optional.empty();
-    }
-
-    private boolean isAdmin(Authentication authentication) {
+    private RequesterContext createRequesterContext(Authentication authentication) {
         if (authentication == null || !authentication.isAuthenticated()) {
-            return false;
+            return new RequesterContext(Optional.empty(), Collections.emptySet());
         }
-        return authentication.getAuthorities().stream()
-                .anyMatch(grantedAuthority -> grantedAuthority.getAuthority().equals("ROLE_ADMIN"));
+
+        Optional<Long> userId = Optional.empty();
+        if (authentication.getPrincipal() instanceof SpringSecurityUser) {
+            userId = Optional.of(((SpringSecurityUser) authentication.getPrincipal()).getId());
+        }
+
+        Set<String> roles = authentication.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .collect(Collectors.toSet());
+
+        return new RequesterContext(userId, roles);
     }
 
     // --- Endpoints ---
@@ -52,14 +57,14 @@ public class ReservationController {
             @Valid @RequestBody CreateReservationRequestDTO requestDTO,
             Authentication authentication) {
 
-        Optional<Long> requestingUserIdOpt = getAuthenticatedUserId(authentication);
+        RequesterContext requester = createRequesterContext(authentication);
 
         Reservation reservationToCreate = reservationDTOMapper.fromRequestDTO(requestDTO);
         Reservation createdReservation = reservationService.createReservation(
                 reservationToCreate,
                 requestDTO.getUserId(),
                 requestDTO.getServiceId(),
-                requestingUserIdOpt
+                requester
         );
 
         ReservationResponseDTO responseDTO = reservationDTOMapper.toResponseDTO(createdReservation);
@@ -70,8 +75,8 @@ public class ReservationController {
     public ResponseEntity<ReservationResponseDTO> getReservationById(
             @PathVariable Long id,
             Authentication authentication) { // Inyectar Authentication
-        Optional<Long> requestingUserIdOpt = getAuthenticatedUserId(authentication);
-        Optional<Reservation> reservationOpt = reservationService.findReservationById(id, requestingUserIdOpt); // Pasar el ID del solicitante
+        RequesterContext requester = createRequesterContext(authentication);
+        Optional<Reservation> reservationOpt = reservationService.findReservationById(id, requester); // Pasar el ID del solicitante
         return reservationOpt
                 .map(reservationDTOMapper::toResponseDTO)
                 .map(dto -> new ResponseEntity<>(dto, HttpStatus.OK))
@@ -86,26 +91,24 @@ public class ReservationController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate,
             Authentication authentication) {
 
-        Optional<Long> authenticatedUserIdOpt = getAuthenticatedUserId(authentication);
-        Long authenticatedUserId = authenticatedUserIdOpt.orElse(null);
-        boolean userIsAdmin = isAdmin(authentication);
+        RequesterContext requester = createRequesterContext(authentication);
 
         List<Reservation> reservations;
 
         if (userIdParam != null) {
-            if (!userIsAdmin && (authenticatedUserId == null || !userIdParam.equals(authenticatedUserId))) {
+            if (!requester.isAdmin() && !requester.isOwner(userIdParam)) {
                 return new ResponseEntity<>(Collections.emptyList(), HttpStatus.FORBIDDEN);
             }
-            reservations = reservationService.findReservationsByUserId(userIdParam, authenticatedUserIdOpt);
+            reservations = reservationService.findReservationsByUserId(userIdParam, requester);
         } else if (serviceId != null) {
-            reservations = reservationService.findReservationsByServiceId(serviceId, authenticatedUserIdOpt);
+            reservations = reservationService.findReservationsByServiceId(serviceId, requester);
         } else if (startDate != null && endDate != null) {
-            reservations = reservationService.findReservationsByDateRange(startDate, endDate, authenticatedUserIdOpt);
+            reservations = reservationService.findReservationsByDateRange(startDate, endDate, requester);
         } else {
-            if (userIsAdmin) {
-                reservations = reservationService.findAllReservations(authenticatedUserIdOpt); // Podría necesitar el ID del admin
-            } else if (authenticatedUserId != null) {
-                reservations = reservationService.findReservationsByUserId(authenticatedUserId, authenticatedUserIdOpt);
+            if (requester.isAdmin()) {
+                reservations = reservationService.findAllReservations(requester);
+            } else if (requester.userId().isPresent()) {
+                reservations = reservationService.findReservationsByUserId(requester.userId().get(), requester);
             } else {
                 return new ResponseEntity<>(Collections.emptyList(), HttpStatus.UNAUTHORIZED);
             }
@@ -122,9 +125,9 @@ public class ReservationController {
             @Valid @RequestBody UpdateReservationRequestDTO requestDTO,
             Authentication authentication) { // Inyectar Authentication
 
-        Optional<Long> requestingUserIdOpt = getAuthenticatedUserId(authentication);
+        RequesterContext requester = createRequesterContext(authentication);
         Reservation updateReservationData = reservationDTOMapper.fromRequestDTO(requestDTO);
-        Optional<Reservation> updatedReservationOpt = reservationService.updateReservation(id, updateReservationData, requestingUserIdOpt);
+        Optional<Reservation> updatedReservationOpt = reservationService.updateReservation(id, updateReservationData, requester);
 
         return updatedReservationOpt
                 .map(reservationDTOMapper::toResponseDTO)
@@ -134,9 +137,9 @@ public class ReservationController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteReservation(@PathVariable Long id, Authentication authentication) {
-        Optional<Long> requestingUserIdOpt = getAuthenticatedUserId(authentication);
+        RequesterContext requester = createRequesterContext(authentication);
         try {
-            boolean deleted = reservationService.deleteReservation(id, requestingUserIdOpt);
+            boolean deleted = reservationService.deleteReservation(id, requester);
             if (deleted) {
                 return new ResponseEntity<>(HttpStatus.NO_CONTENT);
             } else {

@@ -59,7 +59,7 @@ public class ReservationPersistenceAdapter implements ReservationPersistencePort
 
     @Override
     public List<Reservation> findByUser(User user) {
-        UserEntity userEntity = userMapper.toEntity(user); // Mapear el User del dominio a UserEntity
+        UserEntity userEntity = userMapper.toEntity(user);
         List<ReservationEntity> entities = reservationJpaRepository.findByUser(userEntity);
         return reservationMapper.toDomainList(entities);
     }
@@ -95,9 +95,15 @@ public class ReservationPersistenceAdapter implements ReservationPersistencePort
     }
 
     @Override
-    public List<Reservation> findFutureReservationsByUser(User user, LocalDateTime currentTime) {
+    public List<Reservation> findFutureReservationsByUser(User user) {
         UserEntity userEntity = userMapper.toEntity(user);
-        List<ReservationEntity> entities = reservationJpaRepository.findByUserAndStartTimeAfter(userEntity, currentTime);
+        List<ReservationEntity> entities = reservationJpaRepository.findByUserAndStartTimeAfter(userEntity, LocalDateTime.now());
+        return reservationMapper.toDomainList(entities);
+    }
+
+    @Override
+    public List<Reservation> findFutureReservationsByUserId(Long userId) {
+        List<ReservationEntity> entities = reservationJpaRepository.findByUserIdAndStartTimeAfter(userId, LocalDateTime.now());
         return reservationMapper.toDomainList(entities);
     }
 
