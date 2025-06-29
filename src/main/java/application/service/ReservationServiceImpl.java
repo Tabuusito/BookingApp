@@ -86,7 +86,11 @@ public class ReservationServiceImpl implements ReservationService {
                     if (updateData.getNotes() != null) {
                         existingReservation.setNotes(updateData.getNotes());
                     }
-
+                    if(requester.isAdmin()){
+                        if(updateData.getStatus() != null){
+                            existingReservation.setStatus(updateData.getStatus());
+                        }
+                    }
                     if (timeChanged) {
                         if (existingReservation.getStartTime().isAfter(existingReservation.getEndTime())) {
                             throw new InvalidReservationTimeException("Start time must be before end time.");

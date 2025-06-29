@@ -16,7 +16,7 @@ public interface ReservationDTOMapper {
 
     ReservationDTOMapper INSTANCE = Mappers.getMapper(ReservationDTOMapper.class);
 
-    @Mapping(source = "user.userId", target = "userId")
+    @Mapping(source = "user.id", target = "userId")
     @Mapping(source = "user.username", target = "username")
     @Mapping(source = "service.serviceId", target = "serviceId")
     @Mapping(source = "service.name", target = "serviceName")
@@ -27,7 +27,7 @@ public interface ReservationDTOMapper {
     @Mapping(target = "user", ignore = true)
     @Mapping(target = "service", ignore = true)
     @Mapping(target = "status", ignore = true)
-    @Mapping(target = "price", source = "price")
+    @Mapping(target = "price", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     Reservation fromRequestDTO(CreateReservationRequestDTO dto);

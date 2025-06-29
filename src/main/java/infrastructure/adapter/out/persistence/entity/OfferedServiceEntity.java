@@ -34,5 +34,5 @@ public class OfferedServiceEntity {
     private BigDecimal pricePerReservation;
 
     @Column(nullable = false)
-    private boolean isActive;
+    private Boolean isActive;
 }

@@ -27,6 +27,17 @@ CREATE TABLE usuario_rol (
     FOREIGN KEY (rol_id) REFERENCES roles(id) ON DELETE CASCADE
 );
 
+CREATE TABLE offered_services (
+    service_id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    description TEXT,
+    default_duration_seconds BIGINT NOT NULL,
+    price_per_reservation DECIMAL(10, 2),
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+
+    INDEX idx_offered_service_name (name)
+);
+
 CREATE TABLE reservations (
     reservation_id BIGINT AUTO_INCREMENT PRIMARY KEY,
     user_id BIGINT NOT NULL,
@@ -48,13 +59,3 @@ CREATE TABLE reservations (
     INDEX idx_reservation_end_time (end_time)
 );
 
-CREATE TABLE offered_services (
-    service_id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(100) NOT NULL,
-    description TEXT,
-    default_duration_seconds BIGINT NOT NULL,
-    price_per_reservation DECIMAL(10, 2),
-    is_active BOOLEAN NOT NULL DEFAULT TRUE,
-
-    INDEX idx_offered_service_name (name)
-);

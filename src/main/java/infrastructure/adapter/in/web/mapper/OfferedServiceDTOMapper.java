@@ -6,7 +6,6 @@ import infrastructure.adapter.in.web.dto.OfferedServiceResponseDTO;
 import infrastructure.adapter.in.web.dto.UpdateOfferedServiceRequestDTO;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
-import org.mapstruct.MappingTarget;
 import org.mapstruct.Named;
 import org.mapstruct.factory.Mappers;
 
@@ -19,7 +18,6 @@ public interface OfferedServiceDTOMapper {
 
     @Mapping(target = "serviceId", ignore = true)
     @Mapping(source = "defaultDurationSeconds", target = "defaultDuration", qualifiedByName = "secondsToDuration")
-    @Mapping(target = "active", source = "isActive")
     OfferedService fromRequestDTO(CreateOfferedServiceRequestDTO dto);
 
     @Mapping(source = "defaultDuration", target = "defaultDurationSeconds", qualifiedByName = "durationToSeconds")

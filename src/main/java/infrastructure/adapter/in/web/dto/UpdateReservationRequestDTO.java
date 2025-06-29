@@ -25,6 +25,8 @@ public class UpdateReservationRequestDTO {
 
     private BigDecimal price;
 
+    private String status;
+
     private String notes;
 
 }
