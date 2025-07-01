@@ -79,4 +79,12 @@ public interface OfferedServicePersistencePort {
      */
     List<OfferedService> findByNameContainingAndIsActive(String nameFragment, boolean activeOnly);
 
+    boolean existsByNameAndOwnerId(String name, Long ownerId);
+
+    List<OfferedService> findByOwnerIdAndIsActive(Long ownerId, boolean isActive);
+
+    List<OfferedService> findByOwnerId(Long ownerId);
+
+    List<OfferedService> findByNameContainingAndOwnerIdAndIsActive(String nameFragment, Long ownerId, boolean isActive);
 }
+

@@ -28,27 +28,11 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/api/reservations")
 @RequiredArgsConstructor
-public class ReservationController {
+public class ReservationController extends AbstractBaseController {
 
     private final ReservationService reservationService;
     private final ReservationDTOMapper reservationDTOMapper;
 
-    private RequesterContext createRequesterContext(Authentication authentication) {
-        if (authentication == null || !authentication.isAuthenticated()) {
-            return new RequesterContext(Optional.empty(), Collections.emptySet());
-        }
-
-        Optional<Long> userId = Optional.empty();
-        if (authentication.getPrincipal() instanceof SpringSecurityUser) {
-            userId = Optional.of(((SpringSecurityUser) authentication.getPrincipal()).getId());
-        }
-
-        Set<String> roles = authentication.getAuthorities().stream()
-                .map(GrantedAuthority::getAuthority)
-                .collect(Collectors.toSet());
-
-        return new RequesterContext(userId, roles);
-    }
 
     // --- Endpoints ---
 
@@ -62,7 +46,7 @@ public class ReservationController {
         Reservation reservationToCreate = reservationDTOMapper.fromRequestDTO(requestDTO);
         Reservation createdReservation = reservationService.createReservation(
                 reservationToCreate,
-                requestDTO.getUserId(),
+                requestDTO.getOwnerId(),
                 requestDTO.getServiceId(),
                 requester
         );
@@ -74,9 +58,9 @@ public class ReservationController {
     @GetMapping("/{id}")
     public ResponseEntity<ReservationResponseDTO> getReservationById(
             @PathVariable Long id,
-            Authentication authentication) { // Inyectar Authentication
+            Authentication authentication) {
         RequesterContext requester = createRequesterContext(authentication);
-        Optional<Reservation> reservationOpt = reservationService.findReservationById(id, requester); // Pasar el ID del solicitante
+        Optional<Reservation> reservationOpt = reservationService.findReservationById(id, requester);
         return reservationOpt
                 .map(reservationDTOMapper::toResponseDTO)
                 .map(dto -> new ResponseEntity<>(dto, HttpStatus.OK))
@@ -85,7 +69,7 @@ public class ReservationController {
 
     @GetMapping
     public ResponseEntity<List<ReservationResponseDTO>> getAllReservations(
-            @RequestParam(required = false) Long userIdParam,
+            @RequestParam(required = false) Long ownerIdParam,
             @RequestParam(required = false) Long serviceId,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate,
@@ -95,11 +79,11 @@ public class ReservationController {
 
         List<Reservation> reservations;
 
-        if (userIdParam != null) {
-            if (!requester.isAdmin() && !requester.isOwner(userIdParam)) {
+        if (ownerIdParam != null) {
+            if (!requester.isAdmin() && !requester.isOwner(ownerIdParam)) {
                 return new ResponseEntity<>(Collections.emptyList(), HttpStatus.FORBIDDEN);
             }
-            reservations = reservationService.findReservationsByUserId(userIdParam, requester);
+            reservations = reservationService.findReservationsByOwnerId(ownerIdParam, requester);
         } else if (serviceId != null) {
             reservations = reservationService.findReservationsByServiceId(serviceId, requester);
         } else if (startDate != null && endDate != null) {
@@ -108,7 +92,7 @@ public class ReservationController {
             if (requester.isAdmin()) {
                 reservations = reservationService.findAllReservations(requester);
             } else if (requester.userId().isPresent()) {
-                reservations = reservationService.findReservationsByUserId(requester.userId().get(), requester);
+                reservations = reservationService.findReservationsByOwnerId(requester.userId().get(), requester);
             } else {
                 return new ResponseEntity<>(Collections.emptyList(), HttpStatus.UNAUTHORIZED);
             }
@@ -123,7 +107,7 @@ public class ReservationController {
     public ResponseEntity<ReservationResponseDTO> updateReservation(
             @PathVariable Long id,
             @Valid @RequestBody UpdateReservationRequestDTO requestDTO,
-            Authentication authentication) { // Inyectar Authentication
+            Authentication authentication) {
 
         RequesterContext requester = createRequesterContext(authentication);
         Reservation updateReservationData = reservationDTOMapper.fromRequestDTO(requestDTO);
@@ -138,18 +122,12 @@ public class ReservationController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteReservation(@PathVariable Long id, Authentication authentication) {
         RequesterContext requester = createRequesterContext(authentication);
-        try {
-            boolean deleted = reservationService.deleteReservation(id, requester);
-            if (deleted) {
-                return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-            } else {
-                return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-            }
-        } catch(AccessDeniedException e) {
-            return new ResponseEntity<>(HttpStatus.FORBIDDEN);
-        } catch (RuntimeException e) {
-            System.err.println(e.getMessage());
+        boolean deleted = reservationService.deleteReservation(id, requester);
+        if (deleted) {
+            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+        } else {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
+
     }
 }

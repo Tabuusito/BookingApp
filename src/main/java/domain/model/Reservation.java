@@ -15,7 +15,7 @@ import java.time.LocalDateTime;
 public class Reservation {
 
     private Long reservationId;
-    private User user;
+    private User owner;
     private OfferedService service;
     private LocalDateTime startTime;
     private LocalDateTime endTime;

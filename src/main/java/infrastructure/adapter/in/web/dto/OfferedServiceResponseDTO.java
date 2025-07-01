@@ -15,6 +15,7 @@ import java.math.BigDecimal;
 public class OfferedServiceResponseDTO {
 
     private Long serviceId;
+    private Long ownerId;
     private String name;
     private String description;
 

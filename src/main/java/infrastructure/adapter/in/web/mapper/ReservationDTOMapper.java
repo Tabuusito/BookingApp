@@ -16,15 +16,15 @@ public interface ReservationDTOMapper {
 
     ReservationDTOMapper INSTANCE = Mappers.getMapper(ReservationDTOMapper.class);
 
-    @Mapping(source = "user.id", target = "userId")
-    @Mapping(source = "user.username", target = "username")
+    @Mapping(source = "owner.id", target = "ownerId")
+    @Mapping(source = "owner.username", target = "ownerUsername")
     @Mapping(source = "service.serviceId", target = "serviceId")
     @Mapping(source = "service.name", target = "serviceName")
     @Mapping(source = "status", target = "status", qualifiedByName = "reservationStatusToString")
     ReservationResponseDTO toResponseDTO(Reservation reservation);
 
     @Mapping(target = "reservationId", ignore = true)
-    @Mapping(target = "user", ignore = true)
+    @Mapping(target = "owner", ignore = true)
     @Mapping(target = "service", ignore = true)
     @Mapping(target = "status", ignore = true)
     @Mapping(target = "price", ignore = true)
@@ -33,7 +33,7 @@ public interface ReservationDTOMapper {
     Reservation fromRequestDTO(CreateReservationRequestDTO dto);
 
     @Mapping(target = "reservationId", ignore = true)
-    @Mapping(target = "user", ignore = true)
+    @Mapping(target = "owner", ignore = true)
     @Mapping(target = "service", ignore = true)
     @Mapping(target = "status", qualifiedByName = "stringToReservationStatus")
     @Mapping(target = "createdAt", ignore = true)

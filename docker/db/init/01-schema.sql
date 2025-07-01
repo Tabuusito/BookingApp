@@ -7,6 +7,7 @@ CREATE TABLE usuarios (
     username VARCHAR(255) NOT NULL UNIQUE,
     email VARCHAR(255) NOT NULL UNIQUE,
     password_hash VARCHAR(255) NOT NULL,
+    role_name VARCHAR(255) NOT NULL,
     active BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
@@ -29,18 +30,21 @@ CREATE TABLE usuario_rol (
 
 CREATE TABLE offered_services (
     service_id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    owner_id BIGINT NOT NULL,
     name VARCHAR(100) NOT NULL,
     description TEXT,
     default_duration_seconds BIGINT NOT NULL,
     price_per_reservation DECIMAL(10, 2),
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
 
+    CONSTRAINT fk_service_owner FOREIGN KEY (owner_id) REFERENCES usuarios(id),
+
     INDEX idx_offered_service_name (name)
 );
 
 CREATE TABLE reservations (
     reservation_id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    user_id BIGINT NOT NULL,
+    owner_id BIGINT NOT NULL,
     service_id BIGINT NOT NULL,
     start_time TIMESTAMP NOT NULL,
     end_time TIMESTAMP NOT NULL,
@@ -50,12 +54,19 @@ CREATE TABLE reservations (
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
-    CONSTRAINT fk_reservation_user FOREIGN KEY (user_id) REFERENCES usuarios(id),
+    CONSTRAINT fk_reservation_owner FOREIGN KEY (owner_id) REFERENCES usuarios(id),
     CONSTRAINT fk_reservation_service FOREIGN KEY (service_id) REFERENCES offered_services(service_id),
 
-    INDEX idx_reservation_user_id (user_id),
+    INDEX idx_reservation_owner_id (owner_id),
     INDEX idx_reservation_service_id (service_id),
     INDEX idx_reservation_start_time (start_time),
     INDEX idx_reservation_end_time (end_time)
+
+
+
+
+    INSERT INTO roles (role_name, description) VALUES ('ROLE_USER', 'Rol para usuarios estándar con acceso básico.');
+
+    INSERT INTO roles (role_name, description) VALUES ('ROLE_ADMIN', 'Rol para administradores con acceso total y privilegios de gestión.');
 );
 

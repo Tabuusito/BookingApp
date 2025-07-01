@@ -25,4 +25,11 @@ public interface OfferedServiceJpaRepository extends JpaRepository<OfferedServic
 
     List<OfferedServiceEntity> findByNameContainingIgnoreCaseAndIsActive(String name, boolean isActive);
 
+    boolean existsByNameIgnoreCaseAndOwnerId(String name, Long ownerId);
+
+    List<OfferedServiceEntity> findByOwnerIdAndIsActive(Long ownerId, boolean isActive);
+
+    List<OfferedServiceEntity> findByOwnerId(Long ownerId);
+
+    List<OfferedServiceEntity> findByNameContainingIgnoreCaseAndOwnerIdAndIsActive(String nameFragment, Long ownerId, boolean isActive);
 }

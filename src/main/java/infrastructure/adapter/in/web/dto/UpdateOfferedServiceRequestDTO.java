@@ -19,6 +19,8 @@ public class UpdateOfferedServiceRequestDTO {
     @Size(min = 3, max = 100, message = "Service name must be between 3 and 100 characters, if provided")
     private String name;
 
+    private Long ownerId;
+
     private String description;
 
     @Min(value = 1, message = "Default duration must be at least 1 second, if provided")

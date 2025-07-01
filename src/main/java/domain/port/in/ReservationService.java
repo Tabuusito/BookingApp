@@ -67,12 +67,12 @@ public interface ReservationService {
 
     /**
      * Lista todas las reservas para un usuario específico.
-     * @param userId El ID del usuario cuyas reservas se quieren listar.
+     * @param ownerId El ID del usuario cuyas reservas de las que es propietario se quieren listar.
      * @param requester El contexto de seguridad del usuario que realiza la petición.
      * @return Una lista de reservas para el usuario especificado.
      * @throws org.springframework.security.access.AccessDeniedException Si el solicitante no tiene permiso.
      */
-    List<Reservation> findReservationsByUserId(Long userId, RequesterContext requester);
+    List<Reservation> findReservationsByOwnerId(Long ownerId, RequesterContext requester);
 
     /**
      * Lista todas las reservas para un servicio específico.

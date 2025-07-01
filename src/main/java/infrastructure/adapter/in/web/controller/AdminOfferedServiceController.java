@@ -1,5 +1,5 @@
 package infrastructure.adapter.in.web.controller;
-/*
+
 import domain.model.OfferedService;
 import domain.port.in.OfferedServiceService;
 import infrastructure.adapter.in.web.dto.CreateOfferedServiceRequestDTO;
@@ -7,57 +7,38 @@ import infrastructure.adapter.in.web.dto.OfferedServiceResponseDTO;
 import infrastructure.adapter.in.web.dto.UpdateOfferedServiceRequestDTO;
 import infrastructure.adapter.in.web.mapper.OfferedServiceDTOMapper;
 import infrastructure.adapter.in.web.security.RequesterContext;
-import infrastructure.adapter.in.web.security.SpringSecurityUser;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/api/services")
+@RequestMapping("/api/admin/services")
 @RequiredArgsConstructor
-public class OfferedServiceController {
+@PreAuthorize("hasRole('ADMIN')")
+public class AdminOfferedServiceController extends AbstractBaseController {
 
     private final OfferedServiceService offeredServiceService;
     private final OfferedServiceDTOMapper offeredServiceDTOMapper;
 
-    private RequesterContext createRequesterContext(Authentication authentication) {
-        if (authentication == null || !authentication.isAuthenticated()) {
-            return new RequesterContext(Optional.empty(), Collections.emptySet());
-        }
-
-        Optional<Long> userId = Optional.empty();
-        if (authentication.getPrincipal() instanceof SpringSecurityUser) {
-            userId = Optional.of(((SpringSecurityUser) authentication.getPrincipal()).getId());
-        }
-
-        Set<String> roles = authentication.getAuthorities().stream()
-                .map(GrantedAuthority::getAuthority)
-                .collect(Collectors.toSet());
-
-        return new RequesterContext(userId, roles);
-    }
-
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<OfferedServiceResponseDTO> createOfferedService(
             @Valid @RequestBody CreateOfferedServiceRequestDTO requestDTO,
             Authentication authentication) {
 
         RequesterContext requester = createRequesterContext(authentication);
 
+        // Asume que el servicio ahora espera el ownerId y el RequesterContext
         OfferedService serviceToCreate = offeredServiceDTOMapper.fromRequestDTO(requestDTO);
-        OfferedService createdService = offeredServiceService.createOfferedService(serviceToCreate);
+        OfferedService createdService = offeredServiceService.createOfferedService(
+                serviceToCreate, requestDTO.getOwnerId(), requester // Aquí ownerId puede ser de otro usuario si el admin lo especifica
+        );
         OfferedServiceResponseDTO responseDTO = offeredServiceDTOMapper.toResponseDTO(createdService);
 
         return new ResponseEntity<>(responseDTO, HttpStatus.CREATED);
@@ -65,7 +46,8 @@ public class OfferedServiceController {
 
     @GetMapping("/{id}")
     public ResponseEntity<OfferedServiceResponseDTO> getOfferedServiceById(@PathVariable Long id, Authentication authentication) {
-        Optional<OfferedService> serviceOpt = offeredServiceService.findOfferedServiceById(id);
+        RequesterContext requester = createRequesterContext(authentication);
+        Optional<OfferedService> serviceOpt = offeredServiceService.findOfferedServiceById(id, requester); // El servicio verifica que es admin
 
         return serviceOpt
                 .map(offeredServiceDTOMapper::toResponseDTO)
@@ -75,19 +57,16 @@ public class OfferedServiceController {
 
     @GetMapping
     public ResponseEntity<List<OfferedServiceResponseDTO>> getAllOfferedServices(
-            @RequestParam(name = "activeOnly", defaultValue = "true") boolean activeOnly,
+            @RequestParam(name = "activeOnly", defaultValue = "false") boolean activeOnly, // Admin puede ver inactivos por defecto
             @RequestParam(name = "nameContains", required = false) String nameContains,
+            @RequestParam(name = "ownerId", required = false) Long ownerId, // Admin puede filtrar por ownerId
             Authentication authentication) {
+
+        RequesterContext requester = createRequesterContext(authentication);
 
         List<OfferedService> services;
 
-        if (nameContains != null && !nameContains.isBlank()) {
-            services = offeredServiceService.findServicesByNameContaining(nameContains, activeOnly);
-        } else if (activeOnly) {
-            services = offeredServiceService.findAllActiveServices();
-        } else {
-            services = offeredServiceService.findAllServices();
-        }
+        services = offeredServiceService.findAllServicesForAdmin(nameContains, activeOnly, Optional.ofNullable(ownerId), requester);
 
         List<OfferedServiceResponseDTO> responseDTOs = services.stream().map(offeredServiceDTOMapper::toResponseDTO).toList();
 
@@ -95,14 +74,14 @@ public class OfferedServiceController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<OfferedServiceResponseDTO> updateOfferedService(
             @PathVariable Long id,
             @Valid @RequestBody UpdateOfferedServiceRequestDTO requestDTO,
             Authentication authentication) {
+        RequesterContext requester = createRequesterContext(authentication);
 
         OfferedService updateData = offeredServiceDTOMapper.fromRequestDTO(requestDTO);
-        Optional<OfferedService> updatedServiceOpt = offeredServiceService.updateOfferedService(id, updateData);
+        Optional<OfferedService> updatedServiceOpt = offeredServiceService.updateOfferedService(id, updateData, requester); // El servicio verifica que es admin
 
         return updatedServiceOpt
                 .map(offeredServiceDTOMapper::toResponseDTO)
@@ -111,10 +90,10 @@ public class OfferedServiceController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Void> deleteOfferedService(@PathVariable Long id,
-                                                     Authentication authentication) {
-        boolean deleted = offeredServiceService.deleteOfferedService(id);
+    public ResponseEntity<Void> deleteOfferedService(@PathVariable Long id, Authentication authentication) {
+        RequesterContext requester = createRequesterContext(authentication);
+        // La excepción ServiceInUseException será manejada por el GlobalExceptionHandler
+        boolean deleted = offeredServiceService.deleteOfferedService(id, requester); // El servicio verifica que es admin
         if (deleted) {
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         } else {
@@ -122,4 +101,3 @@ public class OfferedServiceController {
         }
     }
 }
-*/

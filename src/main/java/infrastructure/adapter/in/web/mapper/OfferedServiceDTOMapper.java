@@ -20,6 +20,7 @@ public interface OfferedServiceDTOMapper {
     @Mapping(source = "defaultDurationSeconds", target = "defaultDuration", qualifiedByName = "secondsToDuration")
     OfferedService fromRequestDTO(CreateOfferedServiceRequestDTO dto);
 
+    @Mapping(source = "owner.id", target = "ownerId")
     @Mapping(source = "defaultDuration", target = "defaultDurationSeconds", qualifiedByName = "durationToSeconds")
     OfferedServiceResponseDTO toResponseDTO(OfferedService offeredService);
 

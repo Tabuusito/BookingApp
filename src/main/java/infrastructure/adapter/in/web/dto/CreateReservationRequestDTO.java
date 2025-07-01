@@ -15,8 +15,8 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 public class CreateReservationRequestDTO {
 
-    @NotNull(message = "User ID cannot be null")
-    private Long userId;
+    @NotNull(message = "Owner ID cannot be null")
+    private Long ownerId;
 
     @NotNull(message = "Service ID cannot be null")
     private Long serviceId;

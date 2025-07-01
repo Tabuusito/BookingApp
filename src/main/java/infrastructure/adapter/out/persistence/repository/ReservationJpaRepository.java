@@ -15,7 +15,7 @@ import java.util.List;
 @Repository
 public interface ReservationJpaRepository extends JpaRepository<ReservationEntity, Long> {
 
-    List<ReservationEntity> findByUser(UserEntity userEntity);
+    List<ReservationEntity> findByOwner(UserEntity userEntity);
 
     List<ReservationEntity> findByService(OfferedServiceEntity offeredServiceEntity);
 
@@ -45,7 +45,7 @@ public interface ReservationJpaRepository extends JpaRepository<ReservationEntit
     List<ReservationEntity> findByStatus(ReservationStatus status);
 
 
-    List<ReservationEntity> findByUserAndStartTimeAfter(UserEntity userEntity, LocalDateTime currentTime);
+    List<ReservationEntity> findByOwnerAndStartTimeAfter(UserEntity userEntity, LocalDateTime currentTime);
 
 
     @Query("SELECT COUNT(r) FROM ReservationEntity r " +
@@ -76,5 +76,5 @@ public interface ReservationJpaRepository extends JpaRepository<ReservationEntit
      * @param currentTime La fecha y hora actual para comparar.
      * @return Una lista de entidades de reserva futuras para ese usuario.
      */
-    List<ReservationEntity> findByUserIdAndStartTimeAfter(Long userId, LocalDateTime currentTime);
+    List<ReservationEntity> findByOwnerIdAndStartTimeAfter(Long userId, LocalDateTime currentTime);
 }

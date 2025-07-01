@@ -29,13 +29,13 @@ public class ReservationServiceImpl implements ReservationService {
     private final OfferedServicePersistencePort offeredServicePersistencePort;
 
     @Override
-    public Reservation createReservation(Reservation reservationDetails, Long userId, Long serviceId, RequesterContext requester) {
-        if (!requester.isAdmin() && !requester.isOwner(userId)) {
+    public Reservation createReservation(Reservation reservationDetails, Long ownerId, Long serviceId, RequesterContext requester) {
+        if (!requester.isAdmin() && !requester.isOwner(ownerId)) {
             throw new AccessDeniedException("You do not have permission to create a reservation for this user.");
         }
 
-        User user = userPersistencePort.findById(userId)
-                .orElseThrow(() -> new UserNotFoundException("User with ID " + userId + " not found."));
+        User user = userPersistencePort.findById(ownerId)
+                .orElseThrow(() -> new UserNotFoundException("User with ID " + ownerId + " not found."));
         OfferedService service = offeredServicePersistencePort.findById(serviceId)
                 .orElseThrow(() -> new OfferedServiceNotFoundException("Service with ID " + serviceId + " not found."));
 
@@ -49,7 +49,7 @@ public class ReservationServiceImpl implements ReservationService {
             throw new ServiceNotAvailableException("The selected time slot is not available for this service.");
         }
 
-        reservationDetails.setUser(user);
+        reservationDetails.setOwner(user);
         reservationDetails.setService(service);
         reservationDetails.setStatus(ReservationStatus.PENDING);
         if (reservationDetails.getPrice() == null) {
@@ -63,14 +63,14 @@ public class ReservationServiceImpl implements ReservationService {
     @Transactional(readOnly = true)
     public Optional<Reservation> findReservationById(Long reservationId, RequesterContext requester) {
         return reservationPersistencePort.findById(reservationId)
-                .filter(reservation -> requester.isAdmin() || requester.isOwner(reservation.getUser().getId()));
+                .filter(reservation -> requester.isAdmin() || requester.isOwner(reservation.getOwner().getId()));
     }
 
     @Override
     public Optional<Reservation> updateReservation(Long reservationId, Reservation updateData, RequesterContext requester) {
         return reservationPersistencePort.findById(reservationId)
                 .map(existingReservation -> {
-                    if (!requester.isAdmin() && !requester.isOwner(existingReservation.getUser().getId())) {
+                    if (!requester.isAdmin() && !requester.isOwner(existingReservation.getOwner().getId())) {
                         throw new AccessDeniedException("You do not have permission to update this reservation.");
                     }
 
@@ -112,7 +112,7 @@ public class ReservationServiceImpl implements ReservationService {
     public boolean deleteReservation(Long reservationId, RequesterContext requester) {
         return reservationPersistencePort.findById(reservationId)
                 .map(reservation -> {
-                    if (!requester.isAdmin() && !requester.isOwner(reservation.getUser().getId())) {
+                    if (!requester.isAdmin() && !requester.isOwner(reservation.getOwner().getId())) {
                         throw new AccessDeniedException("You do not have permission to delete this reservation.");
                     }
                     reservationPersistencePort.deleteById(reservationId);
@@ -131,11 +131,11 @@ public class ReservationServiceImpl implements ReservationService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<Reservation> findReservationsByUserId(Long userId, RequesterContext requester) {
-        if (!requester.isAdmin() && !requester.isOwner(userId)) {
+    public List<Reservation> findReservationsByOwnerId(Long ownerId, RequesterContext requester) {
+        if (!requester.isAdmin() && !requester.isOwner(ownerId)) {
             throw new AccessDeniedException("You do not have permission to view reservations for this user.");
         }
-        return reservationPersistencePort.findFutureReservationsByUserId(userId);
+        return reservationPersistencePort.findFutureReservationsByOwnerId(ownerId);
     }
 
     @Override
@@ -169,7 +169,7 @@ public class ReservationServiceImpl implements ReservationService {
         Reservation reservation = reservationPersistencePort.findById(reservationId)
                 .orElseThrow(() -> new ReservationNotFoundException("Reservation with ID " + reservationId + " not found."));
 
-        if (!requester.isAdmin() && !requester.isOwner(reservation.getUser().getId())) {
+        if (!requester.isAdmin() && !requester.isOwner(reservation.getOwner().getId())) {
             throw new AccessDeniedException("You do not have permission to cancel this reservation.");
         }
 

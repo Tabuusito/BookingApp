@@ -92,4 +92,27 @@ public class OfferedServicePersistenceAdapter implements OfferedServicePersisten
 
         return offeredServiceMapper.toDomainList(entities);
     }
+
+    @Override
+    public boolean existsByNameAndOwnerId(String name, Long ownerId) {
+        return offeredServiceJpaRepository.existsByNameIgnoreCaseAndOwnerId(name, ownerId);
+    }
+
+    @Override
+    public List<OfferedService> findByOwnerIdAndIsActive(Long ownerId, boolean isActive) {
+        List<OfferedServiceEntity> entities = offeredServiceJpaRepository.findByOwnerIdAndIsActive(ownerId, isActive);
+        return offeredServiceMapper.toDomainList(entities);
+    }
+
+    @Override
+    public List<OfferedService> findByOwnerId(Long ownerId) {
+        List<OfferedServiceEntity> entities = offeredServiceJpaRepository.findByOwnerId(ownerId);
+        return offeredServiceMapper.toDomainList(entities);
+    }
+
+    @Override
+    public List<OfferedService> findByNameContainingAndOwnerIdAndIsActive(String nameFragment, Long ownerId, boolean isActive) {
+        List<OfferedServiceEntity> entities = offeredServiceJpaRepository.findByNameContainingIgnoreCaseAndOwnerIdAndIsActive(nameFragment, ownerId, isActive);
+        return offeredServiceMapper.toDomainList(entities);
+    }
 }

@@ -21,6 +21,10 @@ public class OfferedServiceEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long serviceId;
 
+    @ManyToOne
+    @JoinColumn(name="owner_id", nullable = false)
+    private UserEntity owner;
+
     @Column(nullable = false)
     private String name;
 

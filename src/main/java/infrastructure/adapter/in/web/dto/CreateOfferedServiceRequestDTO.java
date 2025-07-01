@@ -14,6 +14,8 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 public class CreateOfferedServiceRequestDTO {
 
+    private Long ownerId;
+
     @NotBlank(message = "Service name cannot be blank")
     @Size(min = 3, max = 100, message = "Service name must be between 3 and 100 characters")
     private String name;

@@ -86,7 +86,7 @@ public interface ReservationPersistencePort {
      * @param user el usuario.
      * @return una lista de reservas futuras.
      */
-    List<Reservation> findFutureReservationsByUser(User user);
+    List<Reservation> findFutureReservationsByOwner(User user);
 
     /**
      * Cuenta el número de reservas activas (PENDING o CONFIRMED) para un servicio en un slot de tiempo.
@@ -110,7 +110,7 @@ public interface ReservationPersistencePort {
      * @param userId El ID del usuario.
      * @return Una lista de reservas futuras.
      */
-    List<Reservation> findFutureReservationsByUserId(Long userId);
+    List<Reservation> findFutureReservationsByOwnerId(Long userId);
 
 
 }

@@ -17,9 +17,9 @@ public class ReservationResponseDTO {
 
     private Long reservationId;
 
-    private Long userId;
+    private Long ownerId;
 
-    private String username;
+    private String ownerUsername;
 
     private Long serviceId;
 

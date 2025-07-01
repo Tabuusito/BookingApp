@@ -17,6 +17,8 @@ public class UpdateReservationRequestDTO {
 
     private Long serviceId;
 
+    private Long ownerId;
+
     @FutureOrPresent(message = "Start time must be now or in the future if provided")
     private LocalDateTime startTime;
 
