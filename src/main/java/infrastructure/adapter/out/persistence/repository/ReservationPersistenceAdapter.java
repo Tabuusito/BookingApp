@@ -125,4 +125,29 @@ public class ReservationPersistenceAdapter implements ReservationPersistencePort
 
         return reservationMapper.toDomainList(futureReservationEntities);
     }
+
+    @Override
+    public List<Reservation> findReservationsByFilters(Optional<Long> ownerIdParam, Optional<Long> serviceId, LocalDateTime startDate, LocalDateTime endDate) {
+        List<ReservationEntity> entities = reservationJpaRepository.findReservationsByFilters(
+                ownerIdParam,
+                serviceId,
+                startDate,
+                endDate
+        );
+        return reservationMapper.toDomainList(entities);
+    }
+
+    @Override
+    public List<Reservation> findFutureReservationsByOwnerIdAndService(Long ownerId, OfferedService service, LocalDateTime currentTime) {
+        OfferedServiceEntity serviceEntity = offeredServiceMapper.toEntity(service);
+        List<ReservationEntity> entities = reservationJpaRepository.findByUserIdAndServiceAndStartTimeAfter(ownerId, serviceEntity, currentTime);
+        return reservationMapper.toDomainList(entities);
+    }
+
+
+    @Override
+    public List<Reservation> findFutureReservationsByOwnerIdAndDateRange(Long ownerId, LocalDateTime startDate, LocalDateTime endDate) {
+        List<ReservationEntity> entities = reservationJpaRepository.findByUserIdAndStartTimeBetween(ownerId, startDate, endDate);
+        return reservationMapper.toDomainList(entities);
+    }
 }

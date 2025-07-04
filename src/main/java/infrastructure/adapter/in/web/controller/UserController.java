@@ -19,7 +19,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/user")
 @RequiredArgsConstructor
-public class UserController {
+public class UserController extends AbstractBaseController{
 
     private final UserService userService;
 

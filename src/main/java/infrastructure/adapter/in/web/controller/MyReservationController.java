@@ -7,46 +7,43 @@ import infrastructure.adapter.in.web.dto.ReservationResponseDTO;
 import infrastructure.adapter.in.web.dto.UpdateReservationRequestDTO;
 import infrastructure.adapter.in.web.mapper.ReservationDTOMapper;
 import infrastructure.adapter.in.web.security.RequesterContext;
-import infrastructure.adapter.in.web.security.SpringSecurityUser;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/api/reservations")
+@RequestMapping("/api/me/reservations") // Nueva ruta para las reservas del usuario autenticado
 @RequiredArgsConstructor
-public class ReservationController extends AbstractBaseController {
+@PreAuthorize("isAuthenticated()") // Solo usuarios autenticados pueden acceder a sus propias reservas
+public class MyReservationController extends AbstractBaseController {
 
     private final ReservationService reservationService;
     private final ReservationDTOMapper reservationDTOMapper;
 
-
-    // --- Endpoints ---
-
     @PostMapping
-    public ResponseEntity<ReservationResponseDTO> createReservation(
+    public ResponseEntity<ReservationResponseDTO> createMyReservation(
             @Valid @RequestBody CreateReservationRequestDTO requestDTO,
             Authentication authentication) {
 
         RequesterContext requester = createRequesterContext(authentication);
+        // Aquí, el ownerId para la creación de la reserva es SIEMPRE el del propio usuario autenticado
+        Long myUserId = requester.userId()
+                .orElseThrow(() -> new AccessDeniedException("User ID is missing from authentication context. Cannot create reservation."));
 
         Reservation reservationToCreate = reservationDTOMapper.fromRequestDTO(requestDTO);
         Reservation createdReservation = reservationService.createReservation(
                 reservationToCreate,
-                requestDTO.getOwnerId(),
+                myUserId, // Forzamos el ownerId al del usuario autenticado
                 requestDTO.getServiceId(),
                 requester
         );
@@ -56,10 +53,11 @@ public class ReservationController extends AbstractBaseController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ReservationResponseDTO> getReservationById(
+    public ResponseEntity<ReservationResponseDTO> getMyReservationById(
             @PathVariable Long id,
             Authentication authentication) {
         RequesterContext requester = createRequesterContext(authentication);
+        // El servicio findReservationById ya tiene la lógica de autorización para el propietario
         Optional<Reservation> reservationOpt = reservationService.findReservationById(id, requester);
         return reservationOpt
                 .map(reservationDTOMapper::toResponseDTO)
@@ -68,34 +66,25 @@ public class ReservationController extends AbstractBaseController {
     }
 
     @GetMapping
-    public ResponseEntity<List<ReservationResponseDTO>> getAllReservations(
-            @RequestParam(required = false) Long ownerIdParam,
+    public ResponseEntity<List<ReservationResponseDTO>> getAllMyReservations(
             @RequestParam(required = false) Long serviceId,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate,
             Authentication authentication) {
 
         RequesterContext requester = createRequesterContext(authentication);
+        Long myUserId = requester.userId()
+                .orElseThrow(() -> new AccessDeniedException("User ID is missing from authentication context. Cannot retrieve reservations."));
 
         List<Reservation> reservations;
 
-        if (ownerIdParam != null) {
-            if (!requester.isAdmin() && !requester.isOwner(ownerIdParam)) {
-                return new ResponseEntity<>(Collections.emptyList(), HttpStatus.FORBIDDEN);
-            }
-            reservations = reservationService.findReservationsByOwnerId(ownerIdParam, requester);
-        } else if (serviceId != null) {
-            reservations = reservationService.findReservationsByServiceId(serviceId, requester);
+        if (serviceId != null) {
+            reservations = reservationService.findMyReservationsByServiceId(myUserId, serviceId, requester);
         } else if (startDate != null && endDate != null) {
-            reservations = reservationService.findReservationsByDateRange(startDate, endDate, requester);
+            reservations = reservationService.findMyReservationsByDateRange(myUserId, startDate, endDate, requester);
         } else {
-            if (requester.isAdmin()) {
-                reservations = reservationService.findAllReservations(requester);
-            } else if (requester.userId().isPresent()) {
-                reservations = reservationService.findReservationsByOwnerId(requester.userId().get(), requester);
-            } else {
-                return new ResponseEntity<>(Collections.emptyList(), HttpStatus.UNAUTHORIZED);
-            }
+            // Sin filtros, obtener todas las reservas del usuario autenticado
+            reservations = reservationService.findReservationsByOwnerId(myUserId, requester);
         }
 
         List<ReservationResponseDTO> responseDTOs = reservations.stream()
@@ -104,13 +93,14 @@ public class ReservationController extends AbstractBaseController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<ReservationResponseDTO> updateReservation(
+    public ResponseEntity<ReservationResponseDTO> updateMyReservation(
             @PathVariable Long id,
             @Valid @RequestBody UpdateReservationRequestDTO requestDTO,
             Authentication authentication) {
 
         RequesterContext requester = createRequesterContext(authentication);
         Reservation updateReservationData = reservationDTOMapper.fromRequestDTO(requestDTO);
+        // El servicio updateReservation ya tiene la lógica de autorización para el propietario
         Optional<Reservation> updatedReservationOpt = reservationService.updateReservation(id, updateReservationData, requester);
 
         return updatedReservationOpt
@@ -120,14 +110,29 @@ public class ReservationController extends AbstractBaseController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteReservation(@PathVariable Long id, Authentication authentication) {
+    public ResponseEntity<Void> deleteMyReservation(@PathVariable Long id, Authentication authentication) {
         RequesterContext requester = createRequesterContext(authentication);
+        // El servicio deleteReservation ya tiene la lógica de autorización para el propietario
         boolean deleted = reservationService.deleteReservation(id, requester);
         if (deleted) {
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         } else {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
+    }
 
+    // Métodos para Confirmar/Cancelar (generalmente permitidos al dueño)
+    @PostMapping("/{id}/confirm")
+    public ResponseEntity<ReservationResponseDTO> confirmMyReservation(@PathVariable Long id, Authentication authentication) {
+        RequesterContext requester = createRequesterContext(authentication);
+        Reservation confirmedReservation = reservationService.confirmReservation(id, requester);
+        return new ResponseEntity<>(reservationDTOMapper.toResponseDTO(confirmedReservation), HttpStatus.OK);
+    }
+
+    @PostMapping("/{id}/cancel")
+    public ResponseEntity<ReservationResponseDTO> cancelMyReservation(@PathVariable Long id, Authentication authentication) {
+        RequesterContext requester = createRequesterContext(authentication);
+        Reservation cancelledReservation = reservationService.cancelReservation(id, requester);
+        return new ResponseEntity<>(reservationDTOMapper.toResponseDTO(cancelledReservation), HttpStatus.OK);
     }
 }

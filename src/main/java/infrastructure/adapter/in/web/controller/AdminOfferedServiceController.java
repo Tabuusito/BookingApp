@@ -34,7 +34,6 @@ public class AdminOfferedServiceController extends AbstractBaseController {
 
         RequesterContext requester = createRequesterContext(authentication);
 
-        // Asume que el servicio ahora espera el ownerId y el RequesterContext
         OfferedService serviceToCreate = offeredServiceDTOMapper.fromRequestDTO(requestDTO);
         OfferedService createdService = offeredServiceService.createOfferedService(
                 serviceToCreate, requestDTO.getOwnerId(), requester // Aquí ownerId puede ser de otro usuario si el admin lo especifica

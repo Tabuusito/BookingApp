@@ -17,6 +17,7 @@ public interface OfferedServiceDTOMapper {
     OfferedServiceDTOMapper INSTANCE = Mappers.getMapper(OfferedServiceDTOMapper.class);
 
     @Mapping(target = "serviceId", ignore = true)
+    @Mapping(target = "owner", ignore = true)
     @Mapping(source = "defaultDurationSeconds", target = "defaultDuration", qualifiedByName = "secondsToDuration")
     OfferedService fromRequestDTO(CreateOfferedServiceRequestDTO dto);
 
@@ -25,6 +26,7 @@ public interface OfferedServiceDTOMapper {
     OfferedServiceResponseDTO toResponseDTO(OfferedService offeredService);
 
     @Mapping(target = "serviceId", ignore = true)
+    @Mapping(target = "owner", ignore = true)
     @Mapping(source = "defaultDurationSeconds", target = "defaultDuration", qualifiedByName = "secondsToDuration")
     OfferedService fromRequestDTO(UpdateOfferedServiceRequestDTO dto);
 

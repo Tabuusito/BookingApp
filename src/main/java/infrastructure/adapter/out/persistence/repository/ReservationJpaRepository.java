@@ -11,6 +11,7 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface ReservationJpaRepository extends JpaRepository<ReservationEntity, Long> {
@@ -77,4 +78,39 @@ public interface ReservationJpaRepository extends JpaRepository<ReservationEntit
      * @return Una lista de entidades de reserva futuras para ese usuario.
      */
     List<ReservationEntity> findByOwnerIdAndStartTimeAfter(Long userId, LocalDateTime currentTime);
+
+    /**
+     * Busca reservas por filtros combinados para administradores.
+     * Permite filtrar opcionalmente por ownerId, serviceId, y rango de fechas.
+     */
+    @Query("SELECT r FROM ReservationEntity r " +
+            "WHERE (:ownerId IS NULL OR r.user.id = :ownerId) " +
+            "AND (:serviceId IS NULL OR r.service.serviceId = :serviceId) " +
+            "AND (:startDate IS NULL OR r.startTime >= :startDate) " +
+            "AND (:endDate IS NULL OR r.endTime <= :endDate)")
+    List<ReservationEntity> findReservationsByFilters(
+            @Param("ownerId") Optional<Long> ownerId,
+            @Param("serviceId") Optional<Long> serviceId,
+            @Param("startDate") LocalDateTime startDate,
+            @Param("endDate") LocalDateTime endDate
+    );
+
+    /**
+     * Busca reservas futuras para un propietario y servicio específicos.
+     * @param ownerId ID del usuario propietario.
+     * @param serviceEntity Entidad de servicio.
+     * @param currentTime La hora actual.
+     * @return Lista de reservas.
+     */
+    List<ReservationEntity> findByUserIdAndServiceAndStartTimeAfter(Long ownerId, OfferedServiceEntity serviceEntity, LocalDateTime currentTime);
+
+    /**
+     * Busca reservas futuras para un propietario dentro de un rango de fechas.
+     * @param ownerId ID del usuario propietario.
+     * @param startDate Fecha de inicio del rango.
+     * @param endDate Fecha de fin del rango.
+     * @return Lista de reservas.
+     */
+    List<ReservationEntity> findByUserIdAndStartTimeBetween(Long ownerId, LocalDateTime startDate, LocalDateTime endDate);
 }
+

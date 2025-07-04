@@ -112,5 +112,31 @@ public interface ReservationPersistencePort {
      */
     List<Reservation> findFutureReservationsByOwnerId(Long userId);
 
+    /**
+     * Busca reservas según filtros combinados (para administradores).
+     * @param ownerIdParam ID del propietario a filtrar (opcional).
+     * @param serviceId ID del servicio a filtrar (opcional).
+     * @param startDate Fecha de inicio del rango (opcional).
+     * @param endDate Fecha de fin del rango (opcional).
+     * @return Una lista de reservas que coinciden con los filtros.
+     */
+    List<Reservation> findReservationsByFilters(Optional<Long> ownerIdParam, Optional<Long> serviceId, LocalDateTime startDate, LocalDateTime endDate);
 
+    /**
+     * Busca reservas futuras para un propietario y servicio específicos.
+     * @param ownerId El ID del usuario propietario.
+     * @param service El objeto de servicio.
+     * @param currentTime La hora actual para filtrar por futuras.
+     * @return Una lista de reservas futuras.
+     */
+    List<Reservation> findFutureReservationsByOwnerIdAndService(Long ownerId, OfferedService service, LocalDateTime currentTime);
+
+    /**
+     * Busca reservas futuras para un propietario dentro de un rango de fechas.
+     * @param ownerId El ID del usuario propietario.
+     * @param startDate Fecha de inicio del rango.
+     * @param endDate Fecha de fin del rango.
+     * @return Una lista de reservas futuras.
+     */
+    List<Reservation> findFutureReservationsByOwnerIdAndDateRange(Long ownerId, LocalDateTime startDate, LocalDateTime endDate);
 }

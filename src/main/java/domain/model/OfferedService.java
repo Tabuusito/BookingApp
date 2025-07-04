@@ -13,8 +13,8 @@ import java.time.Duration;
 @AllArgsConstructor
 @NoArgsConstructor
 public class OfferedService {
-    private User owner;
     private Long serviceId;
+    private User owner;
     private String name;
     private String description;
     private Duration defaultDuration;

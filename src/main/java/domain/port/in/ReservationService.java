@@ -1,7 +1,8 @@
-package domain.port.in; // Ajusta tu paquete
+package domain.port.in;
 
 import domain.model.Reservation;
 import infrastructure.adapter.in.web.security.RequesterContext;
+import org.springframework.security.access.AccessDeniedException;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -23,7 +24,7 @@ public interface ReservationService {
      * @throws domain.exception.UserNotFoundException
      * @throws domain.exception.OfferedServiceNotFoundException
      * @throws domain.exception.ServiceNotAvailableException
-     * @throws org.springframework.security.access.AccessDeniedException
+     * @throws AccessDeniedException
      */
     Reservation createReservation(Reservation reservationDetails, Long userId, Long serviceId, RequesterContext requester);
 
@@ -42,7 +43,7 @@ public interface ReservationService {
      * @param requester El contexto de seguridad del usuario que realiza la petición.
      * @return Un {@link Optional} con la reserva actualizada.
      * @throws domain.exception.ReservationNotFoundException
-     * @throws org.springframework.security.access.AccessDeniedException
+     * @throws AccessDeniedException
      * @throws domain.exception.ServiceNotAvailableException
      */
     Optional<Reservation> updateReservation(Long reservationId, Reservation updateData, RequesterContext requester);
@@ -52,28 +53,14 @@ public interface ReservationService {
      * @param reservationId El ID de la reserva a eliminar.
      * @param requester El contexto de seguridad del usuario que realiza la petición.
      * @return `true` si se eliminó, `false` si no se encontró.
-     * @throws org.springframework.security.access.AccessDeniedException
+     * @throws AccessDeniedException
      * @throws IllegalStateException Si la reserva no se puede eliminar por reglas de negocio.
      */
     boolean deleteReservation(Long reservationId, RequesterContext requester);
 
-    /**
-     * Lista todas las reservas del sistema.
-     * @param requester El contexto de seguridad del usuario que realiza la petición.
-     * @return Una lista de todas las reservas.
-     * @throws org.springframework.security.access.AccessDeniedException Si el usuario no es administrador.
-     */
-    List<Reservation> findAllReservations(RequesterContext requester);
 
-    /**
-     * Lista todas las reservas para un usuario específico.
-     * @param ownerId El ID del usuario cuyas reservas de las que es propietario se quieren listar.
-     * @param requester El contexto de seguridad del usuario que realiza la petición.
-     * @return Una lista de reservas para el usuario especificado.
-     * @throws org.springframework.security.access.AccessDeniedException Si el solicitante no tiene permiso.
-     */
-    List<Reservation> findReservationsByOwnerId(Long ownerId, RequesterContext requester);
-
+    List<Reservation> findAllReservationsForAdmin(Optional<Long> ownerId, Optional<Long> serviceId, LocalDateTime startDate, LocalDateTime endDate, RequesterContext requester);
+    
     /**
      * Lista todas las reservas para un servicio específico.
      * @param serviceId El ID del servicio.
@@ -91,6 +78,41 @@ public interface ReservationService {
      */
     List<Reservation> findReservationsByDateRange(LocalDateTime startDate, LocalDateTime endDate, RequesterContext requester);
 
+
+    /**
+     * Lista todas las reservas de un usuario específico.
+     * Es el método que el MyReservationController llamará para "mis reservas".
+     *
+     * @param ownerId El ID del usuario propietario de las reservas a listar.
+     * @param requester El contexto de seguridad del usuario que realiza la petición.
+     * @return Una lista de reservas que pertenecen al 'ownerId'.
+     * @throws AccessDeniedException Si el solicitante no es el dueño de 'ownerId' y tampoco es admin.
+     */
+    List<Reservation> findReservationsByOwnerId(Long ownerId, RequesterContext requester);
+
+    /**
+     * Lista las reservas de un usuario para un servicio específico.
+     *
+     * @param ownerId El ID del usuario propietario.
+     * @param serviceId El ID del servicio.
+     * @param requester El contexto de seguridad del usuario.
+     * @return Una lista de reservas.
+     * @throws AccessDeniedException Si el solicitante no es el dueño de 'ownerId' y tampoco es admin.
+     */
+    List<Reservation> findMyReservationsByServiceId(Long ownerId, Long serviceId, RequesterContext requester);
+
+    /**
+     * Lista las reservas de un usuario dentro de un rango de fechas.
+     *
+     * @param ownerId El ID del usuario propietario.
+     * @param startDate Fecha de inicio del rango.
+     * @param endDate Fecha de fin del rango.
+     * @param requester El contexto de seguridad del usuario.
+     * @return Una lista de reservas.
+     * @throws AccessDeniedException Si el solicitante no es el dueño de 'ownerId' y tampoco es admin.
+     */
+    List<Reservation> findMyReservationsByDateRange(Long ownerId, LocalDateTime startDate, LocalDateTime endDate, RequesterContext requester);
+
     /**
      * Confirma una reserva pendiente.
      * @param reservationId El ID de la reserva a confirmar.
@@ -98,7 +120,7 @@ public interface ReservationService {
      * @return La reserva confirmada.
      * @throws domain.exception.ReservationNotFoundException
      * @throws IllegalStateException Si la reserva no está en estado PENDING.
-     * @throws org.springframework.security.access.AccessDeniedException
+     * @throws AccessDeniedException
      */
     Reservation confirmReservation(Long reservationId, RequesterContext requester);
 
@@ -109,7 +131,7 @@ public interface ReservationService {
      * @return La reserva cancelada.
      * @throws domain.exception.ReservationNotFoundException
      * @throws IllegalStateException Si la reserva no se puede cancelar.
-     * @throws org.springframework.security.access.AccessDeniedException
+     * @throws AccessDeniedException
      */
     Reservation cancelReservation(Long reservationId, RequesterContext requester);
 }

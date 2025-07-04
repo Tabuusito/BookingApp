@@ -9,6 +9,7 @@ import infrastructure.adapter.in.web.controller.UserController;
 import infrastructure.adapter.in.web.dto.AdminUserCreationDTO;
 import infrastructure.adapter.in.web.dto.UserResponseDTO;
 import infrastructure.adapter.in.web.dto.UserUpdateDTO;
+import infrastructure.adapter.in.web.exception.GlobalExceptionHandler;
 import infrastructure.adapter.in.web.mapper.UserDTOMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -20,6 +21,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.util.Arrays;
 import java.util.List;
@@ -98,16 +101,15 @@ class UserControllerTest {
     }
 
     @Test
-    @DisplayName("GET /api/user - Should return HTTP 500 if service throws exception")
-    void getAllUsers_ServiceThrowsException_ShouldReturnInternalServerError() {
-
+    @DisplayName("GET /api/user - Should throw RuntimeException if service throws it")
+    void getAllUsers_ServiceThrowsException_ShouldPropagateException() {
         when(userServiceMock.getAllUsers()).thenThrow(new RuntimeException("Service error"));
 
-        ResponseEntity<List<UserResponseDTO>> response = userController.getAllUsers();
-
-        assertNotNull(response);
-        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
-        assertNull(response.getBody()); // No debería haber cuerpo en un error 500 genérico aquí
+        assertThrows(
+                RuntimeException.class,
+                () -> userController.getAllUsers(),
+                "Expected RuntimeException to be thrown"
+        );
         verify(userServiceMock, times(1)).getAllUsers();
     }
 
@@ -143,17 +145,15 @@ class UserControllerTest {
     }
 
     @Test
-    @DisplayName("GET /api/user/{id} - Should return HTTP 500 if service throws exception")
-    void getUserById_ServiceThrowsException_ShouldReturnInternalServerError() {
-        // Arrange
+    @DisplayName("GET /api/user/{id} - Should throw RuntimeException if service throws it")
+    void getUserById_ServiceThrowsException_ShouldPropagateException() {
         when(userServiceMock.findUserById(1L)).thenThrow(new RuntimeException("Service error"));
 
-        // Act
-        ResponseEntity<UserResponseDTO> response = userController.getUserById(1L);
-
-        // Assert
-        assertNotNull(response);
-        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
+        assertThrows(
+                RuntimeException.class,
+                () -> userController.getUserById(1L),
+                "Expected RuntimeException to be thrown"
+        );
         verify(userServiceMock, times(1)).findUserById(1L);
     }
 
@@ -197,18 +197,23 @@ class UserControllerTest {
     }
 
     @Test
-    @DisplayName("POST /api/user - Should return HTTP 409 Conflict if service throws RuntimeException (e.g., duplicate)")
-    void createUser_ServiceThrowsRuntimeException_ShouldReturnConflict() {
+    @DisplayName("POST /api/user - Should throw DuplicateUserInfoException if service throws it")
+    void createUser_ServiceThrowsDuplicateUserInfo_ShouldPropagateException() {
         AdminUserCreationDTO newUserRequest = new AdminUserCreationDTO();
         newUserRequest.setUsername("existinguser");
 
-        when(userServiceMock.createUser(any(User.class))).thenThrow(new DuplicateUserInfoException("User already exists"));
         when(userDTOMapperMock.toDomain(any(AdminUserCreationDTO.class))).thenReturn(new User());
+        when(userServiceMock.createUser(any(User.class))).thenThrow(new DuplicateUserInfoException("User already exists"));
 
-        ResponseEntity<UserResponseDTO> response = userController.createUser(newUserRequest);
+        // Act & Assert
+        // Verificamos que el controlador lanza la excepción esperada
+        DuplicateUserInfoException thrown = assertThrows(
+                DuplicateUserInfoException.class,
+                () -> userController.createUser(newUserRequest) // <-- La llamada al método que lanza
+        );
 
-        assertNotNull(response);
-        assertEquals(HttpStatus.CONFLICT, response.getStatusCode());
+        assertEquals("User already exists", thrown.getMessage()); // Opcional: verificar el mensaje de la excepción
+        verify(userDTOMapperMock, times(1)).toDomain(any(AdminUserCreationDTO.class));
         verify(userServiceMock, times(1)).createUser(any(User.class));
     }
 
@@ -247,21 +252,20 @@ class UserControllerTest {
     }
 
     @Test
-    @DisplayName("PUT /api/user/{id} - Should return HTTP 404 Not Found if service throws UserNotFoundException")
-    void updateUser_UserNotFound_ShouldReturnNotFound() {
+    @DisplayName("PUT /api/user/{id} - Should throw UserNotFoundException if service throws it")
+    void updateUser_UserNotFound_ShouldPropagateNotFoundException() {
         UserUpdateDTO updatedUserRequest = new UserUpdateDTO();
         updatedUserRequest.setUsername("updateduser");
 
-        User updatedUser = new User();
-        updatedUser.setUsername("updateduser");
-
+        when(userDTOMapperMock.toDomain(any(UserUpdateDTO.class))).thenReturn(new User()); // Mapeo del DTO antes de llamar al servicio
         when(userServiceMock.updateUser(any(User.class))).thenThrow(new UserNotFoundException("User not found"));
-        when(userDTOMapperMock.toDomain(any(UserUpdateDTO.class))).thenReturn(updatedUser);
 
-        ResponseEntity<UserResponseDTO> response = userController.updateUser(99L, updatedUserRequest);
-
-        assertNotNull(response);
-        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+        assertThrows(
+                UserNotFoundException.class,
+                () -> userController.updateUser(99L, updatedUserRequest),
+                "Expected UserNotFoundException to be thrown"
+        );
+        verify(userDTOMapperMock, times(1)).toDomain(any(UserUpdateDTO.class));
         verify(userServiceMock, times(1)).updateUser(any(User.class));
     }
 
@@ -280,15 +284,18 @@ class UserControllerTest {
     }
 
     @Test
-    @DisplayName("DELETE /api/user/{id} - Should return HTTP 404 Not Found if service throws RuntimeException (e.g., UserNotFound)")
-    void deleteUser_UserNotFound_ShouldReturnNotFound() {
-        // Simula que el servicio lanza una RuntimeException (podría ser una UserNotFoundException específica)
-        doThrow(new RuntimeException("User not found")).when(userServiceMock).deleteUser(99L);
+    @DisplayName("DELETE /api/user/{id} - Should throw UserNotFoundException if service throws it")
+    void deleteUser_UserNotFound_ShouldPropagateNotFoundException() {
+        // Arrange
+        // Asegúrate de que tu userServiceMock lance la excepción correcta para 'User not found'
+        doThrow(new UserNotFoundException("User not found")).when(userServiceMock).deleteUser(99L);
 
-        ResponseEntity<Void> response = userController.deleteUser(99L);
-
-        assertNotNull(response);
-        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+        // Act & Assert
+        assertThrows(
+                UserNotFoundException.class,
+                () -> userController.deleteUser(99L),
+                "Expected UserNotFoundException to be thrown"
+        );
         verify(userServiceMock, times(1)).deleteUser(99L);
     }
 }

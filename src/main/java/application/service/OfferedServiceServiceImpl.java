@@ -52,8 +52,6 @@ public class OfferedServiceServiceImpl implements OfferedServiceService {
 
         offeredService.setOwner(owner);
 
-        // Validar nombre duplicado (ahora podría ser por propietario o globalmente)
-        // Decisión: Asumimos que los nombres de servicio deben ser únicos para CADA PROPIETARIO
         if (offeredServicePersistencePort.existsByNameAndOwnerId(offeredService.getName(), ownerId)) {
             throw new DuplicateServiceNameException("A service with the name '" + offeredService.getName() + "' already exists for this owner.");
         }
@@ -99,7 +97,7 @@ public class OfferedServiceServiceImpl implements OfferedServiceService {
             if (updateData.getPricePerReservation() != null) {
                 existingService.setPricePerReservation(updateData.getPricePerReservation());
             }
-            if (updateData.getIsActive() != null) { // Usamos .isActive() porque es un Boolean wrapper
+            if (updateData.getIsActive() != null) {
                 existingService.setIsActive(updateData.getIsActive());
             }
 
