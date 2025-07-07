@@ -10,10 +10,9 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-// Esta es una clase base abstracta, no un componente de Spring.
 public abstract class AbstractBaseController {
 
-    protected RequesterContext createRequesterContext(Authentication authentication) {
+    public RequesterContext createRequesterContext(Authentication authentication) {
         if (authentication == null || !authentication.isAuthenticated()) {
             return new RequesterContext(Optional.empty(), Collections.emptySet());
         }
