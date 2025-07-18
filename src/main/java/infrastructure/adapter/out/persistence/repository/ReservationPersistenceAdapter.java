@@ -14,6 +14,7 @@ import infrastructure.adapter.out.persistence.mapper.UserMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -73,13 +74,13 @@ public class ReservationPersistenceAdapter implements ReservationPersistencePort
     }
 
     @Override
-    public List<Reservation> findByDateRange(LocalDateTime rangeStart, LocalDateTime rangeEnd) {
+    public List<Reservation> findByDateRange(Instant rangeStart, Instant rangeEnd) {
         List<ReservationEntity> entities = reservationJpaRepository.findActiveInDateRange(rangeStart, rangeEnd);
         return reservationMapper.toDomainList(entities);
     }
 
     @Override
-    public List<Reservation> findOverlappingReservations(Long serviceId, LocalDateTime startTime, LocalDateTime endTime, Optional<Long> excludeReservationIdOpt) {
+    public List<Reservation> findOverlappingReservations(Long serviceId, Instant startTime, Instant endTime, Optional<Long> excludeReservationIdOpt) {
         Long excludeId = excludeReservationIdOpt.orElse(null); // JpaRepository espera el valor o null
         List<ReservationEntity> entities = reservationJpaRepository.findOverlappingReservations(
                 serviceId, startTime, endTime, excludeId
@@ -103,12 +104,12 @@ public class ReservationPersistenceAdapter implements ReservationPersistencePort
 
     @Override
     public List<Reservation> findFutureReservationsByOwnerId(Long userId) {
-        List<ReservationEntity> entities = reservationJpaRepository.findByOwnerIdAndStartTimeAfter(userId, LocalDateTime.now());
+        List<ReservationEntity> entities = reservationJpaRepository.findByOwnerIdAndStartTimeAfter(userId, Instant.now());
         return reservationMapper.toDomainList(entities);
     }
 
     @Override
-    public long countActiveReservationsForServiceInSlot(Long serviceId, LocalDateTime startTime, LocalDateTime endTime) {
+    public long countActiveReservationsForServiceInSlot(Long serviceId, Instant startTime, Instant endTime) {
         return reservationJpaRepository.countActiveReservationsForServiceInSlot(
                 serviceId,
                 startTime,
@@ -121,13 +122,13 @@ public class ReservationPersistenceAdapter implements ReservationPersistencePort
     @Override
     public List<Reservation> findFutureReservationsByOfferedServiceId(Long serviceId) {
         List<ReservationEntity> futureReservationEntities =
-                reservationJpaRepository.findByServiceServiceIdAndStartTimeAfter(serviceId, LocalDateTime.now());
+                reservationJpaRepository.findByServiceServiceIdAndStartTimeAfter(serviceId, Instant.now());
 
         return reservationMapper.toDomainList(futureReservationEntities);
     }
 
     @Override
-    public List<Reservation> findReservationsByFilters(Optional<Long> ownerIdParam, Optional<Long> serviceId, LocalDateTime startDate, LocalDateTime endDate) {
+    public List<Reservation> findReservationsByFilters(Optional<Long> ownerIdParam, Optional<Long> serviceId, Instant startDate, Instant endDate) {
         List<ReservationEntity> entities = reservationJpaRepository.findReservationsByFilters(
                 ownerIdParam.orElse(null),
                 serviceId.orElse(null),
@@ -138,7 +139,7 @@ public class ReservationPersistenceAdapter implements ReservationPersistencePort
     }
 
     @Override
-    public List<Reservation> findFutureReservationsByOwnerIdAndService(Long ownerId, OfferedService service, LocalDateTime currentTime) {
+    public List<Reservation> findFutureReservationsByOwnerIdAndService(Long ownerId, OfferedService service, Instant currentTime) {
         OfferedServiceEntity serviceEntity = offeredServiceMapper.toEntity(service);
         List<ReservationEntity> entities = reservationJpaRepository.findByOwnerIdAndServiceAndStartTimeAfter(ownerId, serviceEntity, currentTime);
         return reservationMapper.toDomainList(entities);
@@ -146,7 +147,7 @@ public class ReservationPersistenceAdapter implements ReservationPersistencePort
 
 
     @Override
-    public List<Reservation> findFutureReservationsByOwnerIdAndDateRange(Long ownerId, LocalDateTime startDate, LocalDateTime endDate) {
+    public List<Reservation> findFutureReservationsByOwnerIdAndDateRange(Long ownerId, Instant startDate, Instant endDate) {
         List<ReservationEntity> entities = reservationJpaRepository.findByOwnerIdAndStartTimeBetween(ownerId, startDate, endDate);
         return reservationMapper.toDomainList(entities);
     }

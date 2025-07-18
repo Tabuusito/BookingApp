@@ -7,7 +7,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 @Data
 @Builder
@@ -22,11 +22,11 @@ public class CreateReservationRequestDTO {
 
     @NotNull(message = "Start time cannot be null")
     @FutureOrPresent(message = "Start time must be now or in the future")
-    private LocalDateTime startTime;
+    private Instant startTime;
 
     @NotNull(message = "End time cannot be null")
     @FutureOrPresent(message = "End time must be now or in the future")
-    private LocalDateTime endTime;
+    private Instant endTime;
 
     private String notes;
 

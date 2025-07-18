@@ -15,7 +15,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -125,7 +125,7 @@ public class ReservationServiceImpl implements ReservationService {
                     if (!requester.isAdmin() && !requester.isOwner(reservation.getOwner().getId())) {
                         throw new AccessDeniedException("You do not have permission to delete this reservation.");
                     }
-                    if (reservation.getStartTime().isAfter(LocalDateTime.now()) && (reservation.getStatus() == ReservationStatus.PENDING || reservation.getStatus() == ReservationStatus.CONFIRMED)) {
+                    if (reservation.getStartTime().isAfter(Instant.now()) && (reservation.getStatus() == ReservationStatus.PENDING || reservation.getStatus() == ReservationStatus.CONFIRMED)) {
                         throw new IllegalStateException("Cannot delete active or future reservations.");
                     }
                     reservationPersistencePort.deleteById(reservationId);
@@ -137,7 +137,7 @@ public class ReservationServiceImpl implements ReservationService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<Reservation> findAllReservationsForAdmin(Optional<Long>  ownerIdParam, Optional<Long> serviceId, LocalDateTime startDate, LocalDateTime endDate, RequesterContext requester) {
+    public List<Reservation> findAllReservationsForAdmin(Optional<Long>  ownerIdParam, Optional<Long> serviceId, Instant startDate, Instant endDate, RequesterContext requester) {
         if (!requester.isAdmin()) {
             throw new AccessDeniedException("Only administrators can list reservations using admin filters.");
         }
@@ -170,7 +170,7 @@ public class ReservationServiceImpl implements ReservationService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<Reservation> findReservationsByDateRange(LocalDateTime startDate, LocalDateTime endDate, RequesterContext requester) {
+    public List<Reservation> findReservationsByDateRange(Instant startDate, Instant endDate, RequesterContext requester) {
         return reservationPersistencePort.findByDateRange(startDate, endDate);
     }
 
@@ -210,12 +210,12 @@ public class ReservationServiceImpl implements ReservationService {
         OfferedService service = offeredServicePersistencePort.findById(serviceId)
                 .orElseThrow(() -> new OfferedServiceNotFoundException("Service with ID " + serviceId + " not found."));
 
-        return reservationPersistencePort.findFutureReservationsByOwnerIdAndService(ownerId, service, LocalDateTime.now());
+        return reservationPersistencePort.findFutureReservationsByOwnerIdAndService(ownerId, service, Instant.now());
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<Reservation> findMyReservationsByDateRange(Long ownerId, LocalDateTime startDate, LocalDateTime endDate, RequesterContext requester) {
+    public List<Reservation> findMyReservationsByDateRange(Long ownerId, Instant startDate, Instant endDate, RequesterContext requester) {
         // Autorización: Asegurarse de que el usuario está viendo sus propias reservas
         if (!requester.isOwner(ownerId)) {
             throw new AccessDeniedException("You can only view your own reservations.");

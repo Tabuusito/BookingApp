@@ -4,7 +4,7 @@ import domain.model.Reservation;
 import infrastructure.adapter.in.web.security.RequesterContext;
 import org.springframework.security.access.AccessDeniedException;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -59,7 +59,7 @@ public interface ReservationService {
     boolean deleteReservation(Long reservationId, RequesterContext requester);
 
 
-    List<Reservation> findAllReservationsForAdmin(Optional<Long> ownerId, Optional<Long> serviceId, LocalDateTime startDate, LocalDateTime endDate, RequesterContext requester);
+    List<Reservation> findAllReservationsForAdmin(Optional<Long> ownerId, Optional<Long> serviceId, Instant startDate, Instant endDate, RequesterContext requester);
     
     /**
      * Lista todas las reservas para un servicio específico.
@@ -76,7 +76,7 @@ public interface ReservationService {
      * @param requester El contexto de seguridad del usuario que realiza la petición.
      * @return Una lista de reservas en el rango.
      */
-    List<Reservation> findReservationsByDateRange(LocalDateTime startDate, LocalDateTime endDate, RequesterContext requester);
+    List<Reservation> findReservationsByDateRange(Instant startDate, Instant endDate, RequesterContext requester);
 
 
     /**
@@ -111,7 +111,7 @@ public interface ReservationService {
      * @return Una lista de reservas.
      * @throws AccessDeniedException Si el solicitante no es el dueño de 'ownerId' y tampoco es admin.
      */
-    List<Reservation> findMyReservationsByDateRange(Long ownerId, LocalDateTime startDate, LocalDateTime endDate, RequesterContext requester);
+    List<Reservation> findMyReservationsByDateRange(Long ownerId, Instant startDate, Instant endDate, RequesterContext requester);
 
     /**
      * Confirma una reserva pendiente.

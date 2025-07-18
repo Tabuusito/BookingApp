@@ -5,6 +5,7 @@ import domain.model.Reservation;
 import domain.model.ReservationStatus;
 import domain.model.User;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.List;
@@ -59,7 +60,7 @@ public interface ReservationPersistencePort {
      * @param rangeEnd el fin del rango de fechas.
      * @return una lista de reservas dentro del rango.
      */
-    List<Reservation> findByDateRange(LocalDateTime rangeStart, LocalDateTime rangeEnd);
+    List<Reservation> findByDateRange(Instant rangeStart, Instant rangeEnd);
 
     /**
      * Busca reservas que se solapan con un rango de tiempo dado para un servicio específico.
@@ -71,7 +72,7 @@ public interface ReservationPersistencePort {
      *                           (útil al actualizar una reserva).
      * @return una lista de reservas que se solapan.
      */
-    List<Reservation> findOverlappingReservations(Long serviceId, LocalDateTime startTime, LocalDateTime endTime, Optional<Long> excludeReservationId);
+    List<Reservation> findOverlappingReservations(Long serviceId, Instant startTime, Instant endTime, Optional<Long> excludeReservationId);
 
     /**
      * Busca todas las reservas con un estado específico.
@@ -96,7 +97,7 @@ public interface ReservationPersistencePort {
      * @param endTime el tiempo de fin del slot.
      * @return el número de reservas activas.
      */
-    long countActiveReservationsForServiceInSlot(Long serviceId, LocalDateTime startTime, LocalDateTime endTime);
+    long countActiveReservationsForServiceInSlot(Long serviceId, Instant startTime, Instant endTime);
 
     /**
      * Busca reservas futuras asociadas a un servicio.
@@ -120,7 +121,7 @@ public interface ReservationPersistencePort {
      * @param endDate Fecha de fin del rango (opcional).
      * @return Una lista de reservas que coinciden con los filtros.
      */
-    List<Reservation> findReservationsByFilters(Optional<Long> ownerIdParam, Optional<Long> serviceId, LocalDateTime startDate, LocalDateTime endDate);
+    List<Reservation> findReservationsByFilters(Optional<Long> ownerIdParam, Optional<Long> serviceId, Instant startDate, Instant endDate);
 
     /**
      * Busca reservas futuras para un propietario y servicio específicos.
@@ -129,7 +130,7 @@ public interface ReservationPersistencePort {
      * @param currentTime La hora actual para filtrar por futuras.
      * @return Una lista de reservas futuras.
      */
-    List<Reservation> findFutureReservationsByOwnerIdAndService(Long ownerId, OfferedService service, LocalDateTime currentTime);
+    List<Reservation> findFutureReservationsByOwnerIdAndService(Long ownerId, OfferedService service, Instant currentTime);
 
     /**
      * Busca reservas futuras para un propietario dentro de un rango de fechas.
@@ -138,5 +139,5 @@ public interface ReservationPersistencePort {
      * @param endDate Fecha de fin del rango.
      * @return Una lista de reservas futuras.
      */
-    List<Reservation> findFutureReservationsByOwnerIdAndDateRange(Long ownerId, LocalDateTime startDate, LocalDateTime endDate);
+    List<Reservation> findFutureReservationsByOwnerIdAndDateRange(Long ownerId, Instant startDate, Instant endDate);
 }

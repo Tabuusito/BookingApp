@@ -7,7 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 @Data
 @Builder
@@ -20,10 +20,10 @@ public class UpdateReservationRequestDTO {
     private Long ownerId;
 
     @FutureOrPresent(message = "Start time must be now or in the future if provided")
-    private LocalDateTime startTime;
+    private Instant startTime;
 
     @FutureOrPresent(message = "End time must be now or in the future if provided")
-    private LocalDateTime endTime;
+    private Instant endTime;
 
     private BigDecimal price;
 

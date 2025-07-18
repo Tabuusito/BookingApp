@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -20,11 +21,11 @@ public interface ReservationJpaRepository extends JpaRepository<ReservationEntit
     List<ReservationEntity> findByService(OfferedServiceEntity offeredServiceEntity);
 
     // Reservas que INICIAN dentro del rango.
-    List<ReservationEntity> findByStartTimeBetween(LocalDateTime rangeStart, LocalDateTime rangeEnd);
+    List<ReservationEntity> findByStartTimeBetween(Instant rangeStart, Instant rangeEnd);
 
     // Reservas que están ACTIVAS (se solapan) en cualquier punto del rango.
     @Query("SELECT r FROM ReservationEntity r WHERE r.startTime < :rangeEnd AND r.endTime > :rangeStart")
-    List<ReservationEntity> findActiveInDateRange(@Param("rangeStart") LocalDateTime rangeStart, @Param("rangeEnd") LocalDateTime rangeEnd);
+    List<ReservationEntity> findActiveInDateRange(@Param("rangeStart") Instant rangeStart, @Param("rangeEnd") Instant rangeEnd);
 
 
     // Solapamiento: (StartA < EndB) and (StartB < EndA)
@@ -35,8 +36,8 @@ public interface ReservationJpaRepository extends JpaRepository<ReservationEntit
             "AND (:excludeReservationId IS NULL OR r.reservationId <> :excludeReservationId)")
     List<ReservationEntity> findOverlappingReservations(
             @Param("serviceId") Long serviceId,
-            @Param("startTime") LocalDateTime startTime,
-            @Param("endTime") LocalDateTime endTime,
+            @Param("startTime") Instant startTime,
+            @Param("endTime") Instant endTime,
             @Param("excludeReservationId") Long excludeReservationId // Pasar null si no se excluye nada
     );
     // Es más seguro que el adaptador maneje el Optional y pase null si está vacío.
@@ -55,8 +56,8 @@ public interface ReservationJpaRepository extends JpaRepository<ReservationEntit
             "AND (r.status = :pendingStatus OR r.status = :confirmedStatus)")
     long countActiveReservationsForServiceInSlot(
             @Param("serviceId") Long serviceId,
-            @Param("startTime") LocalDateTime startTime,
-            @Param("endTime") LocalDateTime endTime,
+            @Param("startTime") Instant startTime,
+            @Param("endTime") Instant endTime,
             @Param("pendingStatus") ReservationStatus pendingStatus,
             @Param("confirmedStatus") ReservationStatus confirmedStatus
     );
@@ -67,7 +68,7 @@ public interface ReservationJpaRepository extends JpaRepository<ReservationEntit
      * @param dateTime La fecha y hora actual para comparar.
      * @return Una lista de entidades de reserva futuras para ese servicio.
      */
-    List<ReservationEntity> findByServiceServiceIdAndStartTimeAfter(Long serviceId, LocalDateTime dateTime);
+    List<ReservationEntity> findByServiceServiceIdAndStartTimeAfter(Long serviceId, Instant dateTime);
 
     /**
      * Busca entidades de reserva futuras para un ID de usuario específico.
@@ -76,7 +77,7 @@ public interface ReservationJpaRepository extends JpaRepository<ReservationEntit
      * @param currentTime La fecha y hora actual para comparar.
      * @return Una lista de entidades de reserva futuras para ese usuario.
      */
-    List<ReservationEntity> findByOwnerIdAndStartTimeAfter(Long userId, LocalDateTime currentTime);
+    List<ReservationEntity> findByOwnerIdAndStartTimeAfter(Long userId, Instant currentTime);
 
     /**
      * Busca reservas por filtros combinados para administradores.
@@ -90,8 +91,8 @@ public interface ReservationJpaRepository extends JpaRepository<ReservationEntit
     List<ReservationEntity> findReservationsByFilters(
             @Param("ownerId") Long ownerId,
             @Param("serviceId") Long serviceId,
-            @Param("startDate") LocalDateTime startDate,
-            @Param("endDate") LocalDateTime endDate
+            @Param("startDate") Instant startDate,
+            @Param("endDate") Instant endDate
     );
 
     /**
@@ -101,7 +102,7 @@ public interface ReservationJpaRepository extends JpaRepository<ReservationEntit
      * @param currentTime La hora actual.
      * @return Lista de reservas.
      */
-    List<ReservationEntity> findByOwnerIdAndServiceAndStartTimeAfter(Long ownerId, OfferedServiceEntity serviceEntity, LocalDateTime currentTime);
+    List<ReservationEntity> findByOwnerIdAndServiceAndStartTimeAfter(Long ownerId, OfferedServiceEntity serviceEntity, Instant currentTime);
 
     /**
      * Busca reservas futuras para un propietario dentro de un rango de fechas.
@@ -110,6 +111,6 @@ public interface ReservationJpaRepository extends JpaRepository<ReservationEntit
      * @param endDate Fecha de fin del rango.
      * @return Lista de reservas.
      */
-    List<ReservationEntity> findByOwnerIdAndStartTimeBetween(Long ownerId, LocalDateTime startDate, LocalDateTime endDate);
+    List<ReservationEntity> findByOwnerIdAndStartTimeBetween(Long ownerId, Instant startDate, Instant endDate);
 }
 
