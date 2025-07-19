@@ -58,11 +58,11 @@ public class MyReservationController extends AbstractBaseController {
     }
 
     @GetMapping("/{uuid}")
-    public ResponseEntity<ReservationResponseDTO> getMyReservationById(
-            @PathVariable String strUuid,
+    public ResponseEntity<ReservationResponseDTO> getMyReservationByUuid(
+            @PathVariable ("uuid") String reservationUuid,
             Authentication authentication) {
         RequesterContext requester = createRequesterContext(authentication);
-        UUID uuid = uuidValidator.UUIDvalidateAndConvert(strUuid);
+        UUID uuid = uuidValidator.UUIDvalidateAndConvert(reservationUuid);
 
         Optional<Reservation> reservationOpt = reservationService.findReservationByUuid(uuid, requester);
         return reservationOpt
@@ -102,7 +102,7 @@ public class MyReservationController extends AbstractBaseController {
 
     @PutMapping("/{uuid}")
     public ResponseEntity<ReservationResponseDTO> updateMyReservation(
-            @PathVariable String reservationUuid,
+            @PathVariable ("uuid") String reservationUuid,
             @Valid @RequestBody UpdateReservationRequestDTO requestDTO,
             Authentication authentication) {
 
@@ -118,7 +118,7 @@ public class MyReservationController extends AbstractBaseController {
     }
 
     @DeleteMapping("/{uuid}")
-    public ResponseEntity<Void> deleteMyReservation(@PathVariable String reservationUuid, Authentication authentication) {
+    public ResponseEntity<Void> deleteMyReservation(@PathVariable ("uuid") String reservationUuid, Authentication authentication) {
         RequesterContext requester = createRequesterContext(authentication);
         UUID uuid = uuidValidator.UUIDvalidateAndConvert(reservationUuid);
         boolean deleted = reservationService.deleteReservation(uuid, requester);
@@ -131,7 +131,7 @@ public class MyReservationController extends AbstractBaseController {
 
     // Métodos para Confirmar/Cancelar (permitidos al dueño)
     @PostMapping("/{uuid}/confirm")
-    public ResponseEntity<ReservationResponseDTO> confirmMyReservation(@PathVariable String reservationUuid, Authentication authentication) {
+    public ResponseEntity<ReservationResponseDTO> confirmMyReservation(@PathVariable ("uuid") String reservationUuid, Authentication authentication) {
         RequesterContext requester = createRequesterContext(authentication);
         UUID uuid = uuidValidator.UUIDvalidateAndConvert(reservationUuid);
         Reservation confirmedReservation = reservationService.confirmReservation(uuid, requester);
@@ -139,7 +139,7 @@ public class MyReservationController extends AbstractBaseController {
     }
 
     @PostMapping("/{uuid}/cancel")
-    public ResponseEntity<ReservationResponseDTO> cancelMyReservation(@PathVariable String reservationUuid, Authentication authentication) {
+    public ResponseEntity<ReservationResponseDTO> cancelMyReservation(@PathVariable ("uuid") String reservationUuid, Authentication authentication) {
         RequesterContext requester = createRequesterContext(authentication);
         UUID uuid = uuidValidator.UUIDvalidateAndConvert(reservationUuid);
         Reservation cancelledReservation = reservationService.cancelReservation(uuid, requester);

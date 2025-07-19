@@ -16,7 +16,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 public class ReservationResponseDTO {
 
-    private String uuid;
+    private String reservationUuid;
 
     private String ownerUuid;
 

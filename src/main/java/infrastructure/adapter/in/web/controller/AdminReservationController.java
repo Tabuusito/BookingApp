@@ -55,7 +55,7 @@ public class AdminReservationController extends AbstractBaseController {
 
     @GetMapping("/{uuid}")
     public ResponseEntity<ReservationResponseDTO> getReservationById(
-            @PathVariable String reservationUuid,
+            @PathVariable ("uuid") String reservationUuid,
             Authentication authentication) {
         RequesterContext requester = createRequesterContext(authentication);
         UUID uuid = uuidValidator.UUIDvalidateAndConvert(reservationUuid);
@@ -96,7 +96,7 @@ public class AdminReservationController extends AbstractBaseController {
 
     @PutMapping("/{uuid}")
     public ResponseEntity<ReservationResponseDTO> updateReservation(
-            @PathVariable String reservationUuid,
+            @PathVariable ("uuid") String reservationUuid,
             @Valid @RequestBody UpdateReservationRequestDTO requestDTO,
             Authentication authentication) {
 
@@ -113,7 +113,7 @@ public class AdminReservationController extends AbstractBaseController {
     }
 
     @DeleteMapping("/{uuid}")
-    public ResponseEntity<Void> deleteReservation(@PathVariable String reservationUuid, Authentication authentication) {
+    public ResponseEntity<Void> deleteReservation(@PathVariable ("uuid") String reservationUuid, Authentication authentication) {
         RequesterContext requester = createRequesterContext(authentication);
         UUID uuid = uuidValidator.UUIDvalidateAndConvert(reservationUuid);
 
@@ -127,7 +127,7 @@ public class AdminReservationController extends AbstractBaseController {
 
     // Métodos para Confirmar/Cancelar (siempre bajo control de ADMIN)
     @PostMapping("/{uuid}/confirm")
-    public ResponseEntity<ReservationResponseDTO> confirmReservation(@PathVariable String reservationUuid, Authentication authentication) {
+    public ResponseEntity<ReservationResponseDTO> confirmReservation(@PathVariable ("uuid") String reservationUuid, Authentication authentication) {
         RequesterContext requester = createRequesterContext(authentication);
         UUID uuid = uuidValidator.UUIDvalidateAndConvert(reservationUuid);
         Reservation confirmedReservation = reservationService.confirmReservation(uuid, requester);
@@ -135,7 +135,7 @@ public class AdminReservationController extends AbstractBaseController {
     }
 
     @PostMapping("/{uuid}/cancel")
-    public ResponseEntity<ReservationResponseDTO> cancelReservation(@PathVariable String reservationUuid, Authentication authentication) {
+    public ResponseEntity<ReservationResponseDTO> cancelReservation(@PathVariable ("uuid") String reservationUuid, Authentication authentication) {
         RequesterContext requester = createRequesterContext(authentication);
         UUID uuid = uuidValidator.UUIDvalidateAndConvert(reservationUuid);
         Reservation cancelledReservation = reservationService.cancelReservation(uuid, requester);

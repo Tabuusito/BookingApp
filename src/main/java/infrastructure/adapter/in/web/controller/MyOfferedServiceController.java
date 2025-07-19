@@ -48,7 +48,7 @@ public class MyOfferedServiceController extends AbstractBaseController {
     }
 
     @GetMapping("/{uuid}")
-    public ResponseEntity<OfferedServiceResponseDTO> getMyOfferedServiceByUuid(@PathVariable String serviceUuid, Authentication authentication) {
+    public ResponseEntity<OfferedServiceResponseDTO> getMyOfferedServiceByUuid(@PathVariable ("uuid") String serviceUuid, Authentication authentication) {
         RequesterContext requester = createRequesterContext(authentication);
         UUID uuid = uuidValidator.UUIDvalidateAndConvert(serviceUuid);
         Optional<OfferedService> serviceOpt = offeredServiceService.findOfferedServiceByUuid(uuid, requester);
@@ -78,7 +78,7 @@ public class MyOfferedServiceController extends AbstractBaseController {
 
     @PutMapping("/{uuid}")
     public ResponseEntity<OfferedServiceResponseDTO> updateMyOfferedService(
-            @PathVariable String serviceUuid,
+            @PathVariable ("uuid") String serviceUuid,
             @Valid @RequestBody UpdateOfferedServiceRequestDTO requestDTO,
             Authentication authentication) {
 
@@ -95,7 +95,7 @@ public class MyOfferedServiceController extends AbstractBaseController {
     }
 
     @DeleteMapping("/{uuid}")
-    public ResponseEntity<Void> deleteMyOfferedService(@PathVariable String serviceUuid, Authentication authentication) {
+    public ResponseEntity<Void> deleteMyOfferedService(@PathVariable ("uuid") String serviceUuid, Authentication authentication) {
         RequesterContext requester = createRequesterContext(authentication);
         UUID uuid = uuidValidator.UUIDvalidateAndConvert(serviceUuid);
         boolean deleted = offeredServiceService.deleteOfferedService(uuid, requester);

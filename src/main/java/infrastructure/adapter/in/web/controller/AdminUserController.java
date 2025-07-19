@@ -40,7 +40,7 @@ public class AdminUserController extends AbstractBaseController {
     }
 
     @GetMapping("/{uuid}")
-    public ResponseEntity<UserResponseDTO> getUserById(@PathVariable String userUuid, Authentication authentication) {
+    public ResponseEntity<UserResponseDTO> getUserById(@PathVariable ("uuid") String userUuid, Authentication authentication) {
         RequesterContext requester = createRequesterContext(authentication);
         UUID uuid = uuidValidator.UUIDvalidateAndConvert(userUuid);
 
@@ -61,7 +61,7 @@ public class AdminUserController extends AbstractBaseController {
     }
 
     @PutMapping("/{uuid}")
-    public ResponseEntity<UserResponseDTO> updateUser(@PathVariable String userUuid,
+    public ResponseEntity<UserResponseDTO> updateUser(@PathVariable ("uuid") String userUuid,
                                                       @Valid @RequestBody UserUpdateDTO updatedUserDTO,
                                                       Authentication authentication) {
         RequesterContext requester = createRequesterContext(authentication);
@@ -75,7 +75,7 @@ public class AdminUserController extends AbstractBaseController {
     }
 
     @DeleteMapping("/{uuid}")
-    public ResponseEntity<Void> deleteUser(@PathVariable String userUuid, Authentication authentication) {
+    public ResponseEntity<Void> deleteUser(@PathVariable ("uuid") String userUuid, Authentication authentication) {
         RequesterContext requester = createRequesterContext(authentication);
         UUID uuid = uuidValidator.UUIDvalidateAndConvert(userUuid);
         userService.deleteUserByUuid(uuid, requester);

@@ -47,7 +47,7 @@ public class AdminOfferedServiceController extends AbstractBaseController {
     }
 
     @GetMapping("/{uuid}")
-    public ResponseEntity<OfferedServiceResponseDTO> getOfferedServiceByUuid(@PathVariable String serviceUuid, Authentication authentication) {
+    public ResponseEntity<OfferedServiceResponseDTO> getOfferedServiceByUuid(@PathVariable ("uuid") String serviceUuid, Authentication authentication) {
         RequesterContext requester = createRequesterContext(authentication);
         UUID uuid = uuidValidator.UUIDvalidateAndConvert(serviceUuid);
         Optional<OfferedService> serviceOpt = offeredServiceService.findOfferedServiceByUuid(uuid, requester); // El servicio verifica que es admin
@@ -78,7 +78,7 @@ public class AdminOfferedServiceController extends AbstractBaseController {
 
     @PutMapping("/{uuid}")
     public ResponseEntity<OfferedServiceResponseDTO> updateOfferedService(
-            @PathVariable String serviceUuid,
+            @PathVariable ("uuid") String serviceUuid,
             @Valid @RequestBody UpdateOfferedServiceRequestDTO requestDTO,
             Authentication authentication) {
         RequesterContext requester = createRequesterContext(authentication);
@@ -94,7 +94,7 @@ public class AdminOfferedServiceController extends AbstractBaseController {
     }
 
     @DeleteMapping("/{uuid}")
-    public ResponseEntity<Void> deleteOfferedService(@PathVariable String serviceUuid, Authentication authentication) {
+    public ResponseEntity<Void> deleteOfferedService(@PathVariable ("uuid") String serviceUuid, Authentication authentication) {
         RequesterContext requester = createRequesterContext(authentication);
         UUID uuid =uuidValidator.UUIDvalidateAndConvert(serviceUuid);
         // La excepción ServiceInUseException será manejada por el GlobalExceptionHandler
