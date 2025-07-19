@@ -27,7 +27,7 @@ public class CreateOfferedServiceRequestDTO {
     private Long defaultDurationSeconds;
 
     @NotNull(message = "Price per reservation cannot be null")
-    @DecimalMin(value = "0.0", inclusive = false, message = "Price must be greater than 0")
+    @DecimalMin(value = "0.0", message = "Price must be 0 or greater")
     private BigDecimal pricePerReservation;
 
     private Boolean isActive;

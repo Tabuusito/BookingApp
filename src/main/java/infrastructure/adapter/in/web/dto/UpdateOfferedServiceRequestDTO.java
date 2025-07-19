@@ -26,7 +26,7 @@ public class UpdateOfferedServiceRequestDTO {
     @Min(value = 1, message = "Default duration must be at least 1 second, if provided")
     private Long defaultDurationSeconds;
 
-    @DecimalMin(value = "0.0", inclusive = false, message = "Price must be greater than 0, if provided")
+    @DecimalMin(value = "0.0", message = "Price must be greater than 0, if provided")
     private BigDecimal pricePerReservation;
 
     private Boolean isActive;
