@@ -7,6 +7,7 @@ import infrastructure.adapter.in.web.dto.OfferedServiceResponseDTO;
 import infrastructure.adapter.in.web.dto.UpdateOfferedServiceRequestDTO;
 import infrastructure.adapter.in.web.mapper.OfferedServiceDTOMapper;
 import infrastructure.adapter.in.web.security.RequesterContext;
+import infrastructure.adapter.in.web.util.UuidValidator;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -18,15 +19,17 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/me/services")
 @RequiredArgsConstructor
 @PreAuthorize("isAuthenticated()")
-public class MyOfferedServiceController extends AbstractBaseController { // Extiende la clase base
+public class MyOfferedServiceController extends AbstractBaseController {
 
     private final OfferedServiceService offeredServiceService;
     private final OfferedServiceDTOMapper offeredServiceDTOMapper;
+    private final UuidValidator uuidValidator;
 
     @PostMapping
     public ResponseEntity<OfferedServiceResponseDTO> createMyOfferedService(
@@ -44,10 +47,11 @@ public class MyOfferedServiceController extends AbstractBaseController { // Exti
         return new ResponseEntity<>(responseDTO, HttpStatus.CREATED);
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<OfferedServiceResponseDTO> getMyOfferedServiceById(@PathVariable Long id, Authentication authentication) {
+    @GetMapping("/{uuid}")
+    public ResponseEntity<OfferedServiceResponseDTO> getMyOfferedServiceByUuid(@PathVariable String serviceUuid, Authentication authentication) {
         RequesterContext requester = createRequesterContext(authentication);
-        Optional<OfferedService> serviceOpt = offeredServiceService.findOfferedServiceById(id, requester);
+        UUID uuid = uuidValidator.UUIDvalidateAndConvert(serviceUuid);
+        Optional<OfferedService> serviceOpt = offeredServiceService.findOfferedServiceByUuid(uuid, requester);
 
         return serviceOpt
                 .map(offeredServiceDTOMapper::toResponseDTO)
@@ -72,16 +76,17 @@ public class MyOfferedServiceController extends AbstractBaseController { // Exti
         return new ResponseEntity<>(responseDTOs, HttpStatus.OK);
     }
 
-    @PutMapping("/{id}")
+    @PutMapping("/{uuid}")
     public ResponseEntity<OfferedServiceResponseDTO> updateMyOfferedService(
-            @PathVariable Long id,
+            @PathVariable String serviceUuid,
             @Valid @RequestBody UpdateOfferedServiceRequestDTO requestDTO,
             Authentication authentication) {
 
         RequesterContext requester = createRequesterContext(authentication);
+        UUID uuid = uuidValidator.UUIDvalidateAndConvert(serviceUuid);
 
         OfferedService updateData = offeredServiceDTOMapper.fromRequestDTO(requestDTO);
-        Optional<OfferedService> updatedServiceOpt = offeredServiceService.updateOfferedService(id, updateData, requester);
+        Optional<OfferedService> updatedServiceOpt = offeredServiceService.updateOfferedService(uuid, updateData, requester);
 
         return updatedServiceOpt
                 .map(offeredServiceDTOMapper::toResponseDTO)
@@ -89,10 +94,11 @@ public class MyOfferedServiceController extends AbstractBaseController { // Exti
                 .orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteMyOfferedService(@PathVariable Long id, Authentication authentication) {
+    @DeleteMapping("/{uuid}")
+    public ResponseEntity<Void> deleteMyOfferedService(@PathVariable String serviceUuid, Authentication authentication) {
         RequesterContext requester = createRequesterContext(authentication);
-        boolean deleted = offeredServiceService.deleteOfferedService(id, requester);
+        UUID uuid = uuidValidator.UUIDvalidateAndConvert(serviceUuid);
+        boolean deleted = offeredServiceService.deleteOfferedService(uuid, requester);
         if (deleted) {
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         } else {

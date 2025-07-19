@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Data
 @Builder
@@ -16,6 +17,7 @@ import java.time.LocalDateTime;
 public class Reservation {
 
     private Long reservationId;
+    private UUID uuid;
     private User owner;
     private OfferedService service;
     private Instant startTime;

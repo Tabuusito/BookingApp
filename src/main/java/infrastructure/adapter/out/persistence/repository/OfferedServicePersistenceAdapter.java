@@ -9,6 +9,7 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Repository
@@ -26,14 +27,14 @@ public class OfferedServicePersistenceAdapter implements OfferedServicePersisten
     }
 
     @Override
-    public Optional<OfferedService> findById(Long serviceId) {
-        return offeredServiceJpaRepository.findById(serviceId)
+    public Optional<OfferedService> findByUuid(UUID serviceUuid) {
+        return offeredServiceJpaRepository.findByUuid(serviceUuid)
                 .map(offeredServiceMapper::toDomain);
     }
 
     @Override
-    public void deleteById(Long serviceId) {
-        offeredServiceJpaRepository.deleteById(serviceId);
+    public void deleteByUuid(UUID serviceUuid) {
+        offeredServiceJpaRepository.deleteByUuid(serviceUuid);
 
     }
 
@@ -64,10 +65,10 @@ public class OfferedServicePersistenceAdapter implements OfferedServicePersisten
     }
 
     @Override
-    public Optional<OfferedService> updateActiveStatus(Long serviceId, boolean isActive) {
-        int updatedRows = offeredServiceJpaRepository.updateActiveStatus(serviceId, isActive);
+    public Optional<OfferedService> updateActiveStatus(UUID serviceUuid, boolean isActive) {
+        int updatedRows = offeredServiceJpaRepository.updateActiveStatus(serviceUuid, isActive);
         if (updatedRows > 0) {
-            return this.findById(serviceId);
+            return this.findByUuid(serviceUuid);
         }
         return Optional.empty();
     }

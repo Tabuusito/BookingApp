@@ -14,8 +14,8 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 public class OfferedServiceResponseDTO {
 
-    private Long serviceId;
-    private Long ownerId;
+    private String uuid;
+    private String ownerUuid;
     private String name;
     private String description;
 

@@ -5,6 +5,7 @@ import domain.model.Reservation;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 public interface OfferedServicePersistencePort {
 
@@ -17,17 +18,17 @@ public interface OfferedServicePersistencePort {
 
     /**
      * Busca un servicio ofrecido por su ID.
-     * @param serviceId el ID del servicio.
+     * @param serviceUuid el ID del servicio.
      * @return un Optional conteniendo el servicio si se encuentra, o un Optional vacío.
      */
-    Optional<OfferedService> findById(Long serviceId);
+    Optional<OfferedService> findByUuid(UUID serviceUuid);
 
     /**
      * Elimina un servicio ofrecido por su ID.
      * (Considerar la lógica de negocio: ¿qué pasa con las reservas existentes para este servicio?).
-     * @param serviceId el ID del servicio a eliminar.
+     * @param serviceUuid el ID del servicio a eliminar.
      */
-    void deleteById(Long serviceId); // Podría devolver boolean para indicar si se eliminó
+    void deleteByUuid(UUID serviceUuid); // Podría devolver boolean para indicar si se eliminó
 
     /**
      * Obtiene todos los servicios ofrecidos.
@@ -64,11 +65,11 @@ public interface OfferedServicePersistencePort {
 
     /**
      * Cambia el estado de activación de un servicio.
-     * @param serviceId el ID del servicio.
+     * @param serviceUuid el ID del servicio.
      * @param isActive el nuevo estado de activación.
      * @return el servicio actualizado, o Optional.empty() si no se encontró.
      */
-    Optional<OfferedService> updateActiveStatus(Long serviceId, boolean isActive);
+    Optional<OfferedService> updateActiveStatus(UUID serviceUuid, boolean isActive);
 
     /**
      * Busca servicios cuyo nombre

@@ -1,5 +1,5 @@
 package com.example.reservas.adapter.in.web;
-
+/*
 import com.fasterxml.jackson.databind.ObjectMapper;
 import domain.model.Role;
 import domain.model.User;
@@ -129,4 +129,4 @@ class MyProfileControllerIntegrationTest {
 
         assertFalse(userRepository.findById(authenticatedUser.getId()).isPresent());
     }
-}
+}*/

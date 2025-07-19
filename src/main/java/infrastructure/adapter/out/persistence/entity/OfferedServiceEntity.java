@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.Duration;
+import java.util.UUID;
 
 @Data
 @Builder
@@ -20,6 +21,9 @@ public class OfferedServiceEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long serviceId;
+
+    @Column(name = "public_uuid", unique = true, nullable = false, length = 36, updatable = false)
+    private UUID uuid;
 
     @ManyToOne
     @JoinColumn(name="owner_id", nullable = false)
@@ -39,4 +43,12 @@ public class OfferedServiceEntity {
 
     @Column(nullable = false)
     private Boolean isActive;
+
+
+    @PrePersist
+    protected void onCreate() {
+        if (uuid == null) {
+            this.uuid = UUID.randomUUID();
+        }
+    }
 }

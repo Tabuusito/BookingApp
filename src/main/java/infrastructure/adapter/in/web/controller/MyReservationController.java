@@ -1,5 +1,6 @@
 package infrastructure.adapter.in.web.controller;
 
+import domain.exception.InvalidUuidFormatException;
 import domain.model.Reservation;
 import domain.port.in.ReservationService;
 import infrastructure.adapter.in.web.dto.CreateReservationRequestDTO;
@@ -7,6 +8,7 @@ import infrastructure.adapter.in.web.dto.ReservationResponseDTO;
 import infrastructure.adapter.in.web.dto.UpdateReservationRequestDTO;
 import infrastructure.adapter.in.web.mapper.ReservationDTOMapper;
 import infrastructure.adapter.in.web.security.RequesterContext;
+import infrastructure.adapter.in.web.util.UuidValidator;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -20,15 +22,17 @@ import org.springframework.web.bind.annotation.*;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/me/reservations") // Nueva ruta para las reservas del usuario autenticado
+@RequestMapping("/api/me/reservations")
 @RequiredArgsConstructor
-@PreAuthorize("isAuthenticated()") // Solo usuarios autenticados pueden acceder a sus propias reservas
+@PreAuthorize("isAuthenticated()")
 public class MyReservationController extends AbstractBaseController {
 
     private final ReservationService reservationService;
     private final ReservationDTOMapper reservationDTOMapper;
+    private final UuidValidator uuidValidator;
 
     @PostMapping
     public ResponseEntity<ReservationResponseDTO> createMyReservation(
@@ -36,6 +40,7 @@ public class MyReservationController extends AbstractBaseController {
             Authentication authentication) {
 
         RequesterContext requester = createRequesterContext(authentication);
+        UUID uuid = uuidValidator.UUIDvalidateAndConvert(requestDTO.getServiceUuid());
         // Aquí, el ownerId para la creación de la reserva es SIEMPRE el del propio usuario autenticado
         Long myUserId = requester.userId()
                 .orElseThrow(() -> new AccessDeniedException("User ID is missing from authentication context. Cannot create reservation."));
@@ -44,7 +49,7 @@ public class MyReservationController extends AbstractBaseController {
         Reservation createdReservation = reservationService.createReservation(
                 reservationToCreate,
                 myUserId, // Forzamos el ownerId al del usuario autenticado
-                requestDTO.getServiceId(),
+                uuid,
                 requester
         );
 
@@ -52,13 +57,14 @@ public class MyReservationController extends AbstractBaseController {
         return new ResponseEntity<>(responseDTO, HttpStatus.CREATED);
     }
 
-    @GetMapping("/{id}")
+    @GetMapping("/{uuid}")
     public ResponseEntity<ReservationResponseDTO> getMyReservationById(
-            @PathVariable Long id,
+            @PathVariable String strUuid,
             Authentication authentication) {
         RequesterContext requester = createRequesterContext(authentication);
-        // El servicio findReservationById ya tiene la lógica de autorización para el propietario
-        Optional<Reservation> reservationOpt = reservationService.findReservationById(id, requester);
+        UUID uuid = uuidValidator.UUIDvalidateAndConvert(strUuid);
+
+        Optional<Reservation> reservationOpt = reservationService.findReservationByUuid(uuid, requester);
         return reservationOpt
                 .map(reservationDTOMapper::toResponseDTO)
                 .map(dto -> new ResponseEntity<>(dto, HttpStatus.OK))
@@ -67,7 +73,7 @@ public class MyReservationController extends AbstractBaseController {
 
     @GetMapping
     public ResponseEntity<List<ReservationResponseDTO>> getAllMyReservations(
-            @RequestParam(required = false) Long serviceId,
+            @RequestParam(required = false) String serviceUuid,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant startDate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant endDate,
             Authentication authentication) {
@@ -78,30 +84,32 @@ public class MyReservationController extends AbstractBaseController {
 
         List<Reservation> reservations;
 
-        if (serviceId != null) {
-            reservations = reservationService.findMyReservationsByServiceId(myUserId, serviceId, requester);
+        UUID uuid = uuidValidator.validateAndConvertOptional(serviceUuid);
+
+        if (uuid != null) {
+            reservations = reservationService.findMyReservationsByServiceUuid(myUserId, uuid, requester);
         } else if (startDate != null && endDate != null) {
             reservations = reservationService.findMyReservationsByDateRange(myUserId, startDate, endDate, requester);
         } else {
-            // Sin filtros, obtener todas las reservas del usuario autenticado
             reservations = reservationService.findReservationsByOwnerId(myUserId, requester);
         }
 
         List<ReservationResponseDTO> responseDTOs = reservations.stream()
                 .map(reservationDTOMapper::toResponseDTO).toList();
+
         return new ResponseEntity<>(responseDTOs, HttpStatus.OK);
     }
 
-    @PutMapping("/{id}")
+    @PutMapping("/{uuid}")
     public ResponseEntity<ReservationResponseDTO> updateMyReservation(
-            @PathVariable Long id,
+            @PathVariable String reservationUuid,
             @Valid @RequestBody UpdateReservationRequestDTO requestDTO,
             Authentication authentication) {
 
         RequesterContext requester = createRequesterContext(authentication);
+        UUID uuid = uuidValidator.UUIDvalidateAndConvert(reservationUuid);
         Reservation updateReservationData = reservationDTOMapper.fromRequestDTO(requestDTO);
-        // El servicio updateReservation ya tiene la lógica de autorización para el propietario
-        Optional<Reservation> updatedReservationOpt = reservationService.updateReservation(id, updateReservationData, requester);
+        Optional<Reservation> updatedReservationOpt = reservationService.updateReservation(uuid, updateReservationData, requester);
 
         return updatedReservationOpt
                 .map(reservationDTOMapper::toResponseDTO)
@@ -109,11 +117,11 @@ public class MyReservationController extends AbstractBaseController {
                 .orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteMyReservation(@PathVariable Long id, Authentication authentication) {
+    @DeleteMapping("/{uuid}")
+    public ResponseEntity<Void> deleteMyReservation(@PathVariable String reservationUuid, Authentication authentication) {
         RequesterContext requester = createRequesterContext(authentication);
-        // El servicio deleteReservation ya tiene la lógica de autorización para el propietario
-        boolean deleted = reservationService.deleteReservation(id, requester);
+        UUID uuid = uuidValidator.UUIDvalidateAndConvert(reservationUuid);
+        boolean deleted = reservationService.deleteReservation(uuid, requester);
         if (deleted) {
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         } else {
@@ -121,18 +129,20 @@ public class MyReservationController extends AbstractBaseController {
         }
     }
 
-    // Métodos para Confirmar/Cancelar (generalmente permitidos al dueño)
-    @PostMapping("/{id}/confirm")
-    public ResponseEntity<ReservationResponseDTO> confirmMyReservation(@PathVariable Long id, Authentication authentication) {
+    // Métodos para Confirmar/Cancelar (permitidos al dueño)
+    @PostMapping("/{uuid}/confirm")
+    public ResponseEntity<ReservationResponseDTO> confirmMyReservation(@PathVariable String reservationUuid, Authentication authentication) {
         RequesterContext requester = createRequesterContext(authentication);
-        Reservation confirmedReservation = reservationService.confirmReservation(id, requester);
+        UUID uuid = uuidValidator.UUIDvalidateAndConvert(reservationUuid);
+        Reservation confirmedReservation = reservationService.confirmReservation(uuid, requester);
         return new ResponseEntity<>(reservationDTOMapper.toResponseDTO(confirmedReservation), HttpStatus.OK);
     }
 
-    @PostMapping("/{id}/cancel")
-    public ResponseEntity<ReservationResponseDTO> cancelMyReservation(@PathVariable Long id, Authentication authentication) {
+    @PostMapping("/{uuid}/cancel")
+    public ResponseEntity<ReservationResponseDTO> cancelMyReservation(@PathVariable String reservationUuid, Authentication authentication) {
         RequesterContext requester = createRequesterContext(authentication);
-        Reservation cancelledReservation = reservationService.cancelReservation(id, requester);
+        UUID uuid = uuidValidator.UUIDvalidateAndConvert(reservationUuid);
+        Reservation cancelledReservation = reservationService.cancelReservation(uuid, requester);
         return new ResponseEntity<>(reservationDTOMapper.toResponseDTO(cancelledReservation), HttpStatus.OK);
     }
 }

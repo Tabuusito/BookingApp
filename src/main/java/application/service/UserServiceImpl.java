@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional; // Asegúrate de este import
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -165,11 +166,35 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public void deleteUser(Long id, RequesterContext requester) {
+    @Transactional(readOnly = true)
+    public User findUserByUuid(UUID uuid, RequesterContext requester) {
+        User userToReturn = userPersistencePort.findByUuid(uuid)
+                .orElseThrow(() -> new UserNotFoundException("No se encontró un usuario con el UUID: " + uuid));
+
+        if (!requester.isAdmin() && !requester.isOwner(userToReturn.getId())) {
+            throw new AccessDeniedException("No tienes permiso para acceder a este usuario.");
+        }
+        return userToReturn;
+    }
+
+    @Override
+    public void deleteUserById(Long id, RequesterContext requester) {
         if (!requester.isAdmin() && !requester.isOwner(id)) {
             throw new AccessDeniedException("No tienes permiso para eliminar este usuario.");
         }
         userPersistencePort.deleteById(id);
+    }
+
+    @Override
+    public void deleteUserByUuid(UUID uuid, RequesterContext requester) {
+        User userToDelete = userPersistencePort.findByUuid(uuid)
+                .orElseThrow(() -> new UserNotFoundException("No se encontró un usuario con el UUID: " + uuid));
+
+        if (!requester.isAdmin() && !requester.isOwner(userToDelete.getId())) {
+            throw new AccessDeniedException("No tiene permiso para eliminar a este usuario.");
+        }
+
+        userPersistencePort.deleteByUuid(uuid);
     }
 
     @Override
@@ -197,6 +222,6 @@ public class UserServiceImpl implements UserService {
         Long myUserId = requester.userId()
                 .orElseThrow(() -> new AccessDeniedException("Usuario no autenticado para eliminar su perfil."));
 
-        deleteUser(myUserId, requester); // Reutiliza la lógica de deleteUser
+        deleteUserById(myUserId, requester); // Reutiliza la lógica de deleteUser
     }
 }

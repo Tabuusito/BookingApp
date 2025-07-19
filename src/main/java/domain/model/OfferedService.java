@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.Duration;
+import java.util.UUID;
 
 @Data
 @Builder
@@ -14,6 +15,7 @@ import java.time.Duration;
 @NoArgsConstructor
 public class OfferedService {
     private Long serviceId;
+    private UUID uuid;
     private User owner;
     private String name;
     private String description;

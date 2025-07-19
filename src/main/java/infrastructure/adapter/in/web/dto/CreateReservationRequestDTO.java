@@ -6,6 +6,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.validator.constraints.UUID;
 
 import java.time.Instant;
 
@@ -17,8 +18,9 @@ public class CreateReservationRequestDTO {
 
     private Long ownerId;
 
-    @NotNull(message = "Service ID cannot be null")
-    private Long serviceId;
+    @NotNull(message = "Service UUID cannot be null")
+    @UUID
+    private String serviceUuid;
 
     @NotNull(message = "Start time cannot be null")
     @FutureOrPresent(message = "Start time must be now or in the future")

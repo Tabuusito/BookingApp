@@ -20,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -65,8 +66,8 @@ public class OfferedServiceServiceImpl implements OfferedServiceService {
 
     @Override
     @Transactional(readOnly = true)
-    public Optional<OfferedService> findOfferedServiceById(Long serviceId, RequesterContext requester) {
-        return offeredServicePersistencePort.findById(serviceId)
+    public Optional<OfferedService> findOfferedServiceByUuid(UUID serviceUuid, RequesterContext requester) {
+        return offeredServicePersistencePort.findByUuid(serviceUuid)
                 .filter(service -> {
                     // Autorización: Admin puede ver cualquier servicio, el dueño puede ver su servicio.
                     return requester.isAdmin() || requester.isOwner(service.getOwner().getId());
@@ -74,8 +75,8 @@ public class OfferedServiceServiceImpl implements OfferedServiceService {
     }
 
     @Override
-    public Optional<OfferedService> updateOfferedService(Long serviceId, OfferedService updateData, RequesterContext requester) {
-        return offeredServicePersistencePort.findById(serviceId).map(existingService -> {
+    public Optional<OfferedService> updateOfferedService(UUID serviceUuid, OfferedService updateData, RequesterContext requester) {
+        return offeredServicePersistencePort.findByUuid(serviceUuid).map(existingService -> {
             if (!requester.isAdmin() && !requester.isOwner(existingService.getOwner().getId())) {
                 throw new AccessDeniedException("You do not have permission to update this service.");
             }
@@ -106,19 +107,19 @@ public class OfferedServiceServiceImpl implements OfferedServiceService {
     }
 
     @Override
-    public boolean deleteOfferedService(Long serviceId, RequesterContext requester) {
-        OfferedService serviceToDelete = offeredServicePersistencePort.findById(serviceId)
-                .orElseThrow(() -> new OfferedServiceNotFoundException("Service with ID " + serviceId + " not found."));
+    public boolean deleteOfferedService(UUID serviceUuid, RequesterContext requester) {
+        OfferedService serviceToDelete = offeredServicePersistencePort.findByUuid(serviceUuid)
+                .orElseThrow(() -> new OfferedServiceNotFoundException("Service with UUID " + serviceUuid + " not found."));
 
         if (!requester.isAdmin() && !requester.isOwner(serviceToDelete.getOwner().getId())) {
             throw new AccessDeniedException("You do not have permission to delete this service.");
         }
 
-        if (!reservationPersistencePort.findFutureReservationsByOfferedServiceId(serviceId).isEmpty()) {
-            throw new ServiceInUseException("Cannot delete service with ID " + serviceId + " because it has associated future reservations.");
+        if (!reservationPersistencePort.findFutureReservationsByOfferedServiceUuid(serviceUuid).isEmpty()) {
+            throw new ServiceInUseException("Cannot delete service with UUID " + serviceUuid + " because it has associated future reservations.");
         }
 
-        offeredServicePersistencePort.deleteById(serviceId);
+        offeredServicePersistencePort.deleteByUuid(serviceUuid);
         return true;
     }
 

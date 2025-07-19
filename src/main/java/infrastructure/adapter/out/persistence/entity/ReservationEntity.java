@@ -10,6 +10,7 @@ import lombok.NoArgsConstructor;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Data
 @Builder
@@ -22,6 +23,9 @@ public class ReservationEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long reservationId;
+
+    @Column(name = "public_uuid", unique = true, nullable = false, length = 36, updatable = false)
+    private UUID uuid;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "owner_id", nullable = false)
@@ -58,6 +62,10 @@ public class ReservationEntity {
     protected void onCreate() {
         createdAt = Instant.now();
         updatedAt = Instant.now();
+
+        if (uuid == null) {
+            this.uuid = UUID.randomUUID();
+        }
     }
 
     @PreUpdate

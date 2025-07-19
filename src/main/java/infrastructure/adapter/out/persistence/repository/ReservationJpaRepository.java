@@ -12,9 +12,15 @@ import org.springframework.stereotype.Repository;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
 @Repository
 public interface ReservationJpaRepository extends JpaRepository<ReservationEntity, Long> {
+
+    Optional<ReservationEntity> findByUuid(UUID uuid);
+
+    void deleteByUuid(UUID uuid);
 
     List<ReservationEntity> findByOwner(UserEntity userEntity);
 
@@ -30,15 +36,15 @@ public interface ReservationJpaRepository extends JpaRepository<ReservationEntit
 
     // Solapamiento: (StartA < EndB) and (StartB < EndA)
     @Query("SELECT r FROM ReservationEntity r " +
-            "WHERE r.service.serviceId = :serviceId " +
+            "WHERE r.service.uuid = :serviceUuid " +
             "AND r.startTime < :endTime " +
             "AND r.endTime > :startTime " +
-            "AND (:excludeReservationId IS NULL OR r.reservationId <> :excludeReservationId)")
+            "AND (:excludeReservationUuid IS NULL OR r.uuid <> :excludeReservationUuid)")
     List<ReservationEntity> findOverlappingReservations(
-            @Param("serviceId") Long serviceId,
+            @Param("serviceUuid") UUID serviceId,
             @Param("startTime") Instant startTime,
             @Param("endTime") Instant endTime,
-            @Param("excludeReservationId") Long excludeReservationId // Pasar null si no se excluye nada
+            @Param("excludeReservationUuid") UUID excludeReservationId // Pasar null si no se excluye nada
     );
     // Es más seguro que el adaptador maneje el Optional y pase null si está vacío.
 
@@ -50,12 +56,12 @@ public interface ReservationJpaRepository extends JpaRepository<ReservationEntit
 
 
     @Query("SELECT COUNT(r) FROM ReservationEntity r " +
-            "WHERE r.service.serviceId = :serviceId " +
+            "WHERE r.service.uuid = :serviceUuid " +
             "AND r.startTime < :endTime " +
             "AND r.endTime > :startTime " +
             "AND (r.status = :pendingStatus OR r.status = :confirmedStatus)")
     long countActiveReservationsForServiceInSlot(
-            @Param("serviceId") Long serviceId,
+            @Param("serviceUuid") UUID serviceUuid,
             @Param("startTime") Instant startTime,
             @Param("endTime") Instant endTime,
             @Param("pendingStatus") ReservationStatus pendingStatus,
@@ -64,11 +70,11 @@ public interface ReservationJpaRepository extends JpaRepository<ReservationEntit
 
     /**
      * Busca entidades de reserva para un ID de servicio específico y cuya hora de inicio sea posterior a la hora actual.
-     * @param serviceId El ID del servicio.
+     * @param serviceUuid El ID del servicio.
      * @param dateTime La fecha y hora actual para comparar.
      * @return Una lista de entidades de reserva futuras para ese servicio.
      */
-    List<ReservationEntity> findByServiceServiceIdAndStartTimeAfter(Long serviceId, Instant dateTime);
+    List<ReservationEntity> findByServiceUuidAndStartTimeAfter(UUID serviceUuid, Instant dateTime);
 
     /**
      * Busca entidades de reserva futuras para un ID de usuario específico.
@@ -85,12 +91,12 @@ public interface ReservationJpaRepository extends JpaRepository<ReservationEntit
      */
     @Query("SELECT r FROM ReservationEntity r " +
             "WHERE (:ownerId IS NULL OR r.owner.id = :ownerId) " +
-            "AND (:serviceId IS NULL OR r.service.serviceId = :serviceId) " +
+            "AND (:serviceUuid IS NULL OR r.service.uuid = :serviceUuid) " +
             "AND (:startDate IS NULL OR r.startTime >= :startDate) " +
             "AND (:endDate IS NULL OR r.endTime <= :endDate)")
     List<ReservationEntity> findReservationsByFilters(
             @Param("ownerId") Long ownerId,
-            @Param("serviceId") Long serviceId,
+            @Param("serviceUuid") UUID serviceUuid,
             @Param("startDate") Instant startDate,
             @Param("endDate") Instant endDate
     );

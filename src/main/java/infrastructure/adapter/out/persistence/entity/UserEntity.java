@@ -4,6 +4,8 @@ import domain.model.Role;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.UUID;
+
 @Data
 @Builder
 @AllArgsConstructor
@@ -15,6 +17,9 @@ public class UserEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Column(name = "public_uuid", unique = true, nullable = false, length = 36, updatable = false)
+    private UUID uuid;
 
     @Column(nullable = false, unique = true)
     private String username;
@@ -32,4 +37,10 @@ public class UserEntity {
     @Column
     private Boolean active;
 
+    @PrePersist
+    protected void onCreate() {
+        if (uuid == null) {
+            this.uuid = UUID.randomUUID();
+        }
+    }
 }

@@ -16,13 +16,13 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 public class ReservationResponseDTO {
 
-    private Long reservationId;
+    private String uuid;
 
-    private Long ownerId;
+    private String ownerUuid;
 
     private String ownerUsername;
 
-    private Long serviceId;
+    private String serviceUuid;
 
     private String serviceName;
 

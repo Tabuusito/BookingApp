@@ -16,9 +16,9 @@ public interface ReservationDTOMapper {
 
     ReservationDTOMapper INSTANCE = Mappers.getMapper(ReservationDTOMapper.class);
 
-    @Mapping(source = "owner.id", target = "ownerId")
+    @Mapping(source = "owner.uuid", target = "ownerUuid")
     @Mapping(source = "owner.username", target = "ownerUsername")
-    @Mapping(source = "service.serviceId", target = "serviceId")
+    @Mapping(source = "service.uuid", target = "serviceUuid")
     @Mapping(source = "service.name", target = "serviceName")
     @Mapping(source = "status", target = "status", qualifiedByName = "reservationStatusToString")
     ReservationResponseDTO toResponseDTO(Reservation reservation);

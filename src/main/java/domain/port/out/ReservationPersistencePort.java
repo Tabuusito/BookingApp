@@ -9,6 +9,7 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.List;
+import java.util.UUID;
 
 public interface ReservationPersistencePort {
 
@@ -20,17 +21,17 @@ public interface ReservationPersistencePort {
     Reservation save(Reservation reservation);
 
     /**
-     * Busca una reserva por su ID.
-     * @param reservationId el ID de la reserva.
+     * Busca una reserva por su UUID.
+     * @param reservationUuid el UUID de la reserva.
      * @return un Optional conteniendo la reserva si se encuentra, o un Optional vacío.
      */
-    Optional<Reservation> findById(Long reservationId);
+    Optional<Reservation> findByUuid(UUID reservationUuid);
 
     /**
      * Elimina una reserva por su ID.
-     * @param reservationId el ID de la reserva a eliminar.
+     * @param reservationUuid el ID de la reserva a eliminar.
      */
-    void deleteById(Long reservationId);
+    void deleteByUuid(UUID reservationUuid);
 
     /**
      * Obtiene todas las reservas.
@@ -65,14 +66,14 @@ public interface ReservationPersistencePort {
     /**
      * Busca reservas que se solapan con un rango de tiempo dado para un servicio específico.
      * Crucial para la verificación de disponibilidad.
-     * @param serviceId el ID del servicio.
+     * @param serviceUuid el ID del servicio.
      * @param startTime el tiempo de inicio propuesto.
      * @param endTime el tiempo de fin propuesto.
-     * @param excludeReservationId (opcional) el ID de una reserva existente a excluir de la comprobación
+     * @param excludeReservationUuid (opcional) el UUID de una reserva existente a excluir de la comprobación
      *                           (útil al actualizar una reserva).
      * @return una lista de reservas que se solapan.
      */
-    List<Reservation> findOverlappingReservations(Long serviceId, Instant startTime, Instant endTime, Optional<Long> excludeReservationId);
+    List<Reservation> findOverlappingReservations(UUID serviceUuid, Instant startTime, Instant endTime, Optional<UUID> excludeReservationUuid);
 
     /**
      * Busca todas las reservas con un estado específico.
@@ -92,19 +93,19 @@ public interface ReservationPersistencePort {
     /**
      * Cuenta el número de reservas activas (PENDING o CONFIRMED) para un servicio en un slot de tiempo.
      * Útil si un servicio tiene una capacidad limitada (ej. múltiples personas pueden reservar el mismo slot).
-     * @param serviceId el ID del servicio.
+     * @param serviceUuid el ID del servicio.
      * @param startTime el tiempo de inicio del slot.
      * @param endTime el tiempo de fin del slot.
      * @return el número de reservas activas.
      */
-    long countActiveReservationsForServiceInSlot(Long serviceId, Instant startTime, Instant endTime);
+    long countActiveReservationsForServiceInSlot(UUID serviceUuid, Instant startTime, Instant endTime);
 
     /**
      * Busca reservas futuras asociadas a un servicio.
-     * @param serviceId el id del servicio ofrecido.
+     * @param serviceUuid el id del servicio ofrecido.
      * @return una lista de reservas futuras.
      */
-    List<Reservation> findFutureReservationsByOfferedServiceId(Long serviceId);
+    List<Reservation> findFutureReservationsByOfferedServiceUuid(UUID serviceUuid);
 
     /**
      * Busca reservas futuras para un usuario específico usando su ID.
@@ -116,12 +117,12 @@ public interface ReservationPersistencePort {
     /**
      * Busca reservas según filtros combinados (para administradores).
      * @param ownerIdParam ID del propietario a filtrar (opcional).
-     * @param serviceId ID del servicio a filtrar (opcional).
+     * @param serviceUuid ID del servicio a filtrar (opcional).
      * @param startDate Fecha de inicio del rango (opcional).
      * @param endDate Fecha de fin del rango (opcional).
      * @return Una lista de reservas que coinciden con los filtros.
      */
-    List<Reservation> findReservationsByFilters(Optional<Long> ownerIdParam, Optional<Long> serviceId, Instant startDate, Instant endDate);
+    List<Reservation> findReservationsByFilters(Optional<Long> ownerIdParam, Optional<UUID> serviceUuid, Instant startDate, Instant endDate);
 
     /**
      * Busca reservas futuras para un propietario y servicio específicos.

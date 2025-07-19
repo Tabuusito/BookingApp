@@ -6,6 +6,7 @@ import infrastructure.adapter.in.web.security.RequesterContext;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 /**
  * Puerto de entrada para gestionar la lógica de negocio de los servicios ofrecidos.
@@ -31,18 +32,18 @@ public interface OfferedServiceService {
     /**
      * Busca un servicio ofrecido por su ID, aplicando reglas de autorización.
      *
-     * @param serviceId El ID del servicio a buscar.
+     * @param serviceUuid El ID del servicio a buscar.
      * @param requester El contexto de seguridad del usuario que solicita la información. El servicio verificará
      *                  si el solicitante es un administrador o el propietario del servicio.
      * @return Un {@link Optional} con el servicio si se encuentra y está autorizado, o {@link Optional#empty()} si no.
      * @throws org.springframework.security.access.AccessDeniedException Si el 'requester' no tiene permiso para ver este servicio.
      */
-    Optional<OfferedService> findOfferedServiceById(Long serviceId, RequesterContext requester);
+    Optional<OfferedService> findOfferedServiceByUuid(UUID serviceUuid, RequesterContext requester);
 
     /**
      * Actualiza un servicio ofrecido existente, aplicando reglas de autorización.
      *
-     * @param serviceId  El ID del servicio a actualizar.
+     * @param serviceUuid  El ID del servicio a actualizar.
      * @param updateData Un objeto de dominio OfferedService con los campos a actualizar (comportamiento PATCH).
      * @param requester  El contexto de seguridad del usuario que realiza la petición.
      * @return Un {@link Optional} con el servicio actualizado si se encuentra y la operación es exitosa y autorizada.
@@ -50,18 +51,18 @@ public interface OfferedServiceService {
      * @throws DuplicateServiceNameException Si se intenta cambiar el nombre a uno que ya existe.
      * @throws org.springframework.security.access.AccessDeniedException Si el 'requester' no tiene permiso para modificar este servicio.
      */
-    Optional<OfferedService> updateOfferedService(Long serviceId, OfferedService updateData, RequesterContext requester);
+    Optional<OfferedService> updateOfferedService(UUID serviceUuid, OfferedService updateData, RequesterContext requester);
 
     /**
      * Elimina un servicio ofrecido, aplicando reglas de autorización.
      *
-     * @param serviceId El ID del servicio a eliminar.
+     * @param serviceUuid El ID del servicio a eliminar.
      * @param requester El contexto de seguridad del usuario que realiza la petición.
      * @return `true` si se eliminó, `false` si no se encontró.
      * @throws ServiceInUseException Si el servicio tiene reservas asociadas y no se puede eliminar.
      * @throws org.springframework.security.access.AccessDeniedException Si el 'requester' no tiene permiso para eliminar este servicio.
      */
-    boolean deleteOfferedService(Long serviceId, RequesterContext requester);
+    boolean deleteOfferedService(UUID serviceUuid, RequesterContext requester);
 
     /**
      * Lista todos los servicios ofrecidos en el sistema (generalmente para administradores).

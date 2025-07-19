@@ -21,11 +21,13 @@ public interface UserDTOMapper {
     UserResponseDTO toDTO(User user);
 
     @Mapping(target = "id", ignore = true)
+    @Mapping(target = "uuid", ignore = true)
     @Mapping(source = "password", target = "passwordHash")
     @Mapping(source = "role", target = "role", qualifiedByName = "mapRoleStringToEnum")
     User toDomain(AdminUserCreationDTO adminUserCreationDTO);
 
     @Mapping(target = "id", ignore = true)
+    @Mapping(target = "uuid", ignore = true)
     @Mapping(source = "password", target = "passwordHash")
     @Mapping(source = "role", target = "role", qualifiedByName = "mapRoleStringToEnum")
     User toDomain(UserUpdateDTO userUpdateDTO);

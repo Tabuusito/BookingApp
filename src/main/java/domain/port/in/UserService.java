@@ -8,6 +8,7 @@ import infrastructure.adapter.in.web.security.RequesterContext;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.UUID;
 
 @Service
 public interface UserService {
@@ -60,6 +61,8 @@ public interface UserService {
      */
     User findUserById(Long id, RequesterContext requester);
 
+    User findUserByUuid(UUID uuid, RequesterContext requester);
+
     /**
      * Elimina un usuario por su ID, aplicando reglas de autorización.
      * Un administrador puede eliminar cualquier usuario. Un usuario normal solo puede eliminar su propio perfil.
@@ -69,7 +72,9 @@ public interface UserService {
      * @throws UserNotFoundException Si el usuario a eliminar no es encontrado.
      * @throws AccessDeniedException Si el 'requester' no tiene permiso para eliminar este usuario.
      */
-    void deleteUser(Long id, RequesterContext requester);
+    void deleteUserById(Long id, RequesterContext requester);
+
+    void deleteUserByUuid(UUID uuid, RequesterContext requester);
 
     /**
      * Lista todos los usuarios del sistema.

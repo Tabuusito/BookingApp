@@ -7,6 +7,7 @@ import infrastructure.adapter.in.web.dto.ReservationResponseDTO;
 import infrastructure.adapter.in.web.dto.UpdateReservationRequestDTO;
 import infrastructure.adapter.in.web.mapper.ReservationDTOMapper;
 import infrastructure.adapter.in.web.security.RequesterContext;
+import infrastructure.adapter.in.web.util.UuidValidator;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -19,15 +20,17 @@ import org.springframework.web.bind.annotation.*;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/admin/reservations") // Nueva ruta para la administración de reservas
+@RequestMapping("/api/admin/reservations")
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('ADMIN')") // Todas las operaciones aquí requieren rol ADMIN
+@PreAuthorize("hasRole('ADMIN')")
 public class AdminReservationController extends AbstractBaseController {
 
     private final ReservationService reservationService;
     private final ReservationDTOMapper reservationDTOMapper;
+    private final UuidValidator uuidValidator;
 
     @PostMapping
     public ResponseEntity<ReservationResponseDTO> createReservation(
@@ -35,13 +38,14 @@ public class AdminReservationController extends AbstractBaseController {
             Authentication authentication) {
 
         RequesterContext requester = createRequesterContext(authentication);
+        UUID uuid = uuidValidator.UUIDvalidateAndConvert(requestDTO.getServiceUuid());
 
         // Los admins pueden crear reservas para cualquier ownerId
         Reservation reservationToCreate = reservationDTOMapper.fromRequestDTO(requestDTO);
         Reservation createdReservation = reservationService.createReservation(
                 reservationToCreate,
-                requestDTO.getOwnerId(), // El admin especifica el ownerId
-                requestDTO.getServiceId(),
+                requestDTO.getOwnerId(),
+                uuid,
                 requester
         );
 
@@ -49,13 +53,14 @@ public class AdminReservationController extends AbstractBaseController {
         return new ResponseEntity<>(responseDTO, HttpStatus.CREATED);
     }
 
-    @GetMapping("/{id}")
+    @GetMapping("/{uuid}")
     public ResponseEntity<ReservationResponseDTO> getReservationById(
-            @PathVariable Long id,
+            @PathVariable String reservationUuid,
             Authentication authentication) {
         RequesterContext requester = createRequesterContext(authentication);
+        UUID uuid = uuidValidator.UUIDvalidateAndConvert(reservationUuid);
         // El servicio findReservationById ya tiene la lógica para que el admin pueda ver cualquier reserva
-        Optional<Reservation> reservationOpt = reservationService.findReservationById(id, requester);
+        Optional<Reservation> reservationOpt = reservationService.findReservationByUuid(uuid, requester);
         return reservationOpt
                 .map(reservationDTOMapper::toResponseDTO)
                 .map(dto -> new ResponseEntity<>(dto, HttpStatus.OK))
@@ -65,32 +70,41 @@ public class AdminReservationController extends AbstractBaseController {
     @GetMapping
     public ResponseEntity<List<ReservationResponseDTO>> getAllReservations(
             @RequestParam(required = false) Long ownerId,
-            @RequestParam(required = false) Long serviceId,
+            @RequestParam(required = false) String serviceUuid,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant startDate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant endDate,
             Authentication authentication) {
 
         RequesterContext requester = createRequesterContext(authentication);
 
-        List<Reservation> reservations;
+        Optional<UUID> serviceUuidOptional = Optional.ofNullable(uuidValidator
+                .validateAndConvertOptional(serviceUuid));
 
-        reservations = reservationService.findAllReservationsForAdmin(Optional.of(ownerId), Optional.of(serviceId), startDate, endDate, requester);
+        List<Reservation> reservations = reservationService.findAllReservationsForAdmin(
+                Optional.ofNullable(ownerId),
+                serviceUuidOptional,
+                startDate,
+                endDate,
+                requester
+        );
 
         List<ReservationResponseDTO> responseDTOs = reservations.stream()
                 .map(reservationDTOMapper::toResponseDTO).toList();
+
         return new ResponseEntity<>(responseDTOs, HttpStatus.OK);
     }
 
-    @PutMapping("/{id}")
+    @PutMapping("/{uuid}")
     public ResponseEntity<ReservationResponseDTO> updateReservation(
-            @PathVariable Long id,
+            @PathVariable String reservationUuid,
             @Valid @RequestBody UpdateReservationRequestDTO requestDTO,
             Authentication authentication) {
 
         RequesterContext requester = createRequesterContext(authentication);
+        UUID uuid = uuidValidator.UUIDvalidateAndConvert(reservationUuid);
         Reservation updateReservationData = reservationDTOMapper.fromRequestDTO(requestDTO);
-        // El servicio updateReservation ya tiene la lógica de autorización para ADMIN
-        Optional<Reservation> updatedReservationOpt = reservationService.updateReservation(id, updateReservationData, requester);
+
+        Optional<Reservation> updatedReservationOpt = reservationService.updateReservation(uuid, updateReservationData, requester);
 
         return updatedReservationOpt
                 .map(reservationDTOMapper::toResponseDTO)
@@ -98,11 +112,12 @@ public class AdminReservationController extends AbstractBaseController {
                 .orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteReservation(@PathVariable Long id, Authentication authentication) {
+    @DeleteMapping("/{uuid}")
+    public ResponseEntity<Void> deleteReservation(@PathVariable String reservationUuid, Authentication authentication) {
         RequesterContext requester = createRequesterContext(authentication);
-        // El servicio deleteReservation ya tiene la lógica de autorización para ADMIN
-        boolean deleted = reservationService.deleteReservation(id, requester);
+        UUID uuid = uuidValidator.UUIDvalidateAndConvert(reservationUuid);
+
+        boolean deleted = reservationService.deleteReservation(uuid, requester);
         if (deleted) {
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         } else {
@@ -111,17 +126,19 @@ public class AdminReservationController extends AbstractBaseController {
     }
 
     // Métodos para Confirmar/Cancelar (siempre bajo control de ADMIN)
-    @PostMapping("/{id}/confirm")
-    public ResponseEntity<ReservationResponseDTO> confirmReservation(@PathVariable Long id, Authentication authentication) {
+    @PostMapping("/{uuid}/confirm")
+    public ResponseEntity<ReservationResponseDTO> confirmReservation(@PathVariable String reservationUuid, Authentication authentication) {
         RequesterContext requester = createRequesterContext(authentication);
-        Reservation confirmedReservation = reservationService.confirmReservation(id, requester);
+        UUID uuid = uuidValidator.UUIDvalidateAndConvert(reservationUuid);
+        Reservation confirmedReservation = reservationService.confirmReservation(uuid, requester);
         return new ResponseEntity<>(reservationDTOMapper.toResponseDTO(confirmedReservation), HttpStatus.OK);
     }
 
-    @PostMapping("/{id}/cancel")
-    public ResponseEntity<ReservationResponseDTO> cancelReservation(@PathVariable Long id, Authentication authentication) {
+    @PostMapping("/{uuid}/cancel")
+    public ResponseEntity<ReservationResponseDTO> cancelReservation(@PathVariable String reservationUuid, Authentication authentication) {
         RequesterContext requester = createRequesterContext(authentication);
-        Reservation cancelledReservation = reservationService.cancelReservation(id, requester);
+        UUID uuid = uuidValidator.UUIDvalidateAndConvert(reservationUuid);
+        Reservation cancelledReservation = reservationService.cancelReservation(uuid, requester);
         return new ResponseEntity<>(reservationDTOMapper.toResponseDTO(cancelledReservation), HttpStatus.OK);
     }
 }

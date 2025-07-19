@@ -18,6 +18,7 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Repository
@@ -41,14 +42,14 @@ public class ReservationPersistenceAdapter implements ReservationPersistencePort
     }
 
     @Override
-    public Optional<Reservation> findById(Long reservationId) {
-        return reservationJpaRepository.findById(reservationId)
+    public Optional<Reservation> findByUuid(UUID reservationUuid) {
+        return reservationJpaRepository.findByUuid(reservationUuid)
                 .map(reservationMapper::toDomain);
     }
 
     @Override
-    public void deleteById(Long reservationId) {
-        reservationJpaRepository.deleteById(reservationId);
+    public void deleteByUuid(UUID reservationUuid) {
+        reservationJpaRepository.deleteByUuid(reservationUuid);
     }
 
     @Override
@@ -80,10 +81,10 @@ public class ReservationPersistenceAdapter implements ReservationPersistencePort
     }
 
     @Override
-    public List<Reservation> findOverlappingReservations(Long serviceId, Instant startTime, Instant endTime, Optional<Long> excludeReservationIdOpt) {
-        Long excludeId = excludeReservationIdOpt.orElse(null); // JpaRepository espera el valor o null
+    public List<Reservation> findOverlappingReservations(UUID serviceUuid, Instant startTime, Instant endTime, Optional<UUID> excludeReservationUuidOpt) {
+        UUID excludeUuid = excludeReservationUuidOpt.orElse(null); // JpaRepository espera el valor o null
         List<ReservationEntity> entities = reservationJpaRepository.findOverlappingReservations(
-                serviceId, startTime, endTime, excludeId
+                serviceUuid, startTime, endTime, excludeUuid
         );
         return reservationMapper.toDomainList(entities);
     }
@@ -109,9 +110,9 @@ public class ReservationPersistenceAdapter implements ReservationPersistencePort
     }
 
     @Override
-    public long countActiveReservationsForServiceInSlot(Long serviceId, Instant startTime, Instant endTime) {
+    public long countActiveReservationsForServiceInSlot(UUID serviceUuid, Instant startTime, Instant endTime) {
         return reservationJpaRepository.countActiveReservationsForServiceInSlot(
-                serviceId,
+                serviceUuid,
                 startTime,
                 endTime,
                 ReservationStatus.PENDING,
@@ -120,18 +121,18 @@ public class ReservationPersistenceAdapter implements ReservationPersistencePort
     }
 
     @Override
-    public List<Reservation> findFutureReservationsByOfferedServiceId(Long serviceId) {
+    public List<Reservation> findFutureReservationsByOfferedServiceUuid(UUID serviceUuid) {
         List<ReservationEntity> futureReservationEntities =
-                reservationJpaRepository.findByServiceServiceIdAndStartTimeAfter(serviceId, Instant.now());
+                reservationJpaRepository.findByServiceUuidAndStartTimeAfter(serviceUuid, Instant.now());
 
         return reservationMapper.toDomainList(futureReservationEntities);
     }
 
     @Override
-    public List<Reservation> findReservationsByFilters(Optional<Long> ownerIdParam, Optional<Long> serviceId, Instant startDate, Instant endDate) {
+    public List<Reservation> findReservationsByFilters(Optional<Long> ownerIdParam, Optional<UUID> serviceUuid, Instant startDate, Instant endDate) {
         List<ReservationEntity> entities = reservationJpaRepository.findReservationsByFilters(
                 ownerIdParam.orElse(null),
-                serviceId.orElse(null),
+                serviceUuid.orElse(null),
                 startDate,
                 endDate
         );

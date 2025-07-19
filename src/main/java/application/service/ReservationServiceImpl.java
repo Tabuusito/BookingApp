@@ -18,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -34,14 +35,14 @@ public class ReservationServiceImpl implements ReservationService {
     }
 
     @Override
-    public Reservation createReservation(Reservation reservationDetails, Long ownerId, Long serviceId, RequesterContext requester) {
+    public Reservation createReservation(Reservation reservationDetails, Long ownerId, UUID serviceUuid, RequesterContext requester) {
         if (!requester.isAdmin() && !requester.isOwner(ownerId)) {
             throw new AccessDeniedException("You do not have permission to create a reservation for user ID " + ownerId + ".");
         }
 
         User user = getUserById(ownerId); // El usuario para quien se crea la reserva
-        OfferedService service = offeredServicePersistencePort.findById(serviceId)
-                .orElseThrow(() -> new OfferedServiceNotFoundException("Service with ID " + serviceId + " not found."));
+        OfferedService service = offeredServicePersistencePort.findByUuid(serviceUuid)
+                .orElseThrow(() -> new OfferedServiceNotFoundException("Service with UUID " + serviceUuid + " not found."));
 
         if (!service.getIsActive()) {
             throw new ServiceNotAvailableException("Service '" + service.getName() + "' is not active.");
@@ -50,7 +51,7 @@ public class ReservationServiceImpl implements ReservationService {
             throw new InvalidReservationTimeException("Start time must be before end time.");
         }
         // Comprobación de solapamiento
-        if (!reservationPersistencePort.findOverlappingReservations(serviceId, reservationDetails.getStartTime(), reservationDetails.getEndTime(), Optional.empty()).isEmpty()) {
+        if (!reservationPersistencePort.findOverlappingReservations(serviceUuid, reservationDetails.getStartTime(), reservationDetails.getEndTime(), Optional.empty()).isEmpty()) {
             throw new ServiceNotAvailableException("The selected time slot is not available for this service.");
         }
 
@@ -66,14 +67,14 @@ public class ReservationServiceImpl implements ReservationService {
 
     @Override
     @Transactional(readOnly = true)
-    public Optional<Reservation> findReservationById(Long reservationId, RequesterContext requester) {
-        return reservationPersistencePort.findById(reservationId)
+    public Optional<Reservation> findReservationByUuid(UUID reservationUuid, RequesterContext requester) {
+        return reservationPersistencePort.findByUuid(reservationUuid)
                 .filter(reservation -> requester.isAdmin() || requester.isOwner(reservation.getOwner().getId()));
     }
 
     @Override
-    public Optional<Reservation> updateReservation(Long reservationId, Reservation updateData, RequesterContext requester) {
-        return reservationPersistencePort.findById(reservationId)
+    public Optional<Reservation> updateReservation(UUID reservationUuid, Reservation updateData, RequesterContext requester) {
+        return reservationPersistencePort.findByUuid(reservationUuid)
                 .map(existingReservation -> {
                     if (!requester.isAdmin() && !requester.isOwner(existingReservation.getOwner().getId())) {
                         throw new AccessDeniedException("You do not have permission to update this reservation.");
@@ -95,7 +96,7 @@ public class ReservationServiceImpl implements ReservationService {
                         existingReservation.setOwner(getUserById(updateData.getOwner().getId()));
                     }
                     if (requester.isAdmin() && updateData.getService() != null) {
-                        existingReservation.setService(offeredServicePersistencePort.findById(updateData.getService().getServiceId())
+                        existingReservation.setService(offeredServicePersistencePort.findByUuid(updateData.getService().getUuid())
                             .orElseThrow(() -> new OfferedServiceNotFoundException("New service not found")));
                     }
                     if (updateData.getPrice() != null) { existingReservation.setPrice(updateData.getPrice()); } // Si price es actualizable
@@ -106,10 +107,10 @@ public class ReservationServiceImpl implements ReservationService {
                             throw new InvalidReservationTimeException("Start time must be before end time.");
                         }
                         if (!reservationPersistencePort.findOverlappingReservations(
-                                existingReservation.getService().getServiceId(),
+                                existingReservation.getService().getUuid(),
                                 existingReservation.getStartTime(),
                                 existingReservation.getEndTime(),
-                                Optional.of(reservationId)).isEmpty()) {
+                                Optional.of(reservationUuid)).isEmpty()) {
                             throw new ServiceNotAvailableException("The new time slot is not available.");
                         }
                     }
@@ -119,8 +120,8 @@ public class ReservationServiceImpl implements ReservationService {
     }
 
     @Override
-    public boolean deleteReservation(Long reservationId, RequesterContext requester) {
-        return reservationPersistencePort.findById(reservationId)
+    public boolean deleteReservation(UUID reservationUuid, RequesterContext requester) {
+        return reservationPersistencePort.findByUuid(reservationUuid)
                 .map(reservation -> {
                     if (!requester.isAdmin() && !requester.isOwner(reservation.getOwner().getId())) {
                         throw new AccessDeniedException("You do not have permission to delete this reservation.");
@@ -128,7 +129,7 @@ public class ReservationServiceImpl implements ReservationService {
                     if (reservation.getStartTime().isAfter(Instant.now()) && (reservation.getStatus() == ReservationStatus.PENDING || reservation.getStatus() == ReservationStatus.CONFIRMED)) {
                         throw new IllegalStateException("Cannot delete active or future reservations.");
                     }
-                    reservationPersistencePort.deleteById(reservationId);
+                    reservationPersistencePort.deleteByUuid(reservationUuid);
                     return true;
                 }).orElse(false);
     }
@@ -137,13 +138,13 @@ public class ReservationServiceImpl implements ReservationService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<Reservation> findAllReservationsForAdmin(Optional<Long>  ownerIdParam, Optional<Long> serviceId, Instant startDate, Instant endDate, RequesterContext requester) {
+    public List<Reservation> findAllReservationsForAdmin(Optional<Long>  ownerIdParam, Optional<UUID> serviceUuid, Instant startDate, Instant endDate, RequesterContext requester) {
         if (!requester.isAdmin()) {
             throw new AccessDeniedException("Only administrators can list reservations using admin filters.");
         }
 
         return reservationPersistencePort.findReservationsByFilters(
-                ownerIdParam, serviceId, startDate, endDate
+                ownerIdParam, serviceUuid, startDate, endDate
         );
     }
 
@@ -162,9 +163,9 @@ public class ReservationServiceImpl implements ReservationService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<Reservation> findReservationsByServiceId(Long serviceId, RequesterContext requester) {
-        OfferedService service = offeredServicePersistencePort.findById(serviceId)
-                .orElseThrow(() -> new OfferedServiceNotFoundException("Service with ID " + serviceId + " not found."));
+    public List<Reservation> findReservationsByServiceUuid(UUID serviceUuid, RequesterContext requester) {
+        OfferedService service = offeredServicePersistencePort.findByUuid(serviceUuid)
+                .orElseThrow(() -> new OfferedServiceNotFoundException("Service with UUID " + serviceUuid + " not found."));
         return reservationPersistencePort.findByOfferedService(service);
     }
 
@@ -177,21 +178,21 @@ public class ReservationServiceImpl implements ReservationService {
     // --- Métodos de Acción ---
 
     @Override
-    public Reservation confirmReservation(Long reservationId, RequesterContext requester) {
+    public Reservation confirmReservation(UUID reservationUuid, RequesterContext requester) {
         if (!requester.isAdmin()) {
             throw new AccessDeniedException("Only administrators can confirm reservations.");
         }
-        Reservation reservation = reservationPersistencePort.findById(reservationId)
-                .orElseThrow(() -> new ReservationNotFoundException("Reservation with ID " + reservationId + " not found."));
+        Reservation reservation = reservationPersistencePort.findByUuid(reservationUuid)
+                .orElseThrow(() -> new ReservationNotFoundException("Reservation with ID " + reservationUuid + " not found."));
 
         reservation.confirm();
         return reservationPersistencePort.save(reservation);
     }
 
     @Override
-    public Reservation cancelReservation(Long reservationId, RequesterContext requester) {
-        Reservation reservation = reservationPersistencePort.findById(reservationId)
-                .orElseThrow(() -> new ReservationNotFoundException("Reservation with ID " + reservationId + " not found."));
+    public Reservation cancelReservation(UUID reservationUuid, RequesterContext requester) {
+        Reservation reservation = reservationPersistencePort.findByUuid(reservationUuid)
+                .orElseThrow(() -> new ReservationNotFoundException("Reservation with ID " + reservationUuid + " not found."));
 
         if (!requester.isAdmin() && !requester.isOwner(reservation.getOwner().getId())) {
             throw new AccessDeniedException("You do not have permission to cancel this reservation.");
@@ -203,12 +204,12 @@ public class ReservationServiceImpl implements ReservationService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<Reservation> findMyReservationsByServiceId(Long ownerId, Long serviceId, RequesterContext requester) {
+    public List<Reservation> findMyReservationsByServiceUuid(Long ownerId, UUID serviceUuid, RequesterContext requester) {
         if (!requester.isOwner(ownerId)) {
             throw new AccessDeniedException("You can only view your own reservations.");
         }
-        OfferedService service = offeredServicePersistencePort.findById(serviceId)
-                .orElseThrow(() -> new OfferedServiceNotFoundException("Service with ID " + serviceId + " not found."));
+        OfferedService service = offeredServicePersistencePort.findByUuid(serviceUuid)
+                .orElseThrow(() -> new OfferedServiceNotFoundException("Service with UUID " + serviceUuid + " not found."));
 
         return reservationPersistencePort.findFutureReservationsByOwnerIdAndService(ownerId, service, Instant.now());
     }

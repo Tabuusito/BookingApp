@@ -75,6 +75,11 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(body, HttpStatus.BAD_REQUEST);
     }
 
+    @ExceptionHandler(InvalidUuidFormatException.class)
+    public ResponseEntity<Object> handleInvalidUuidFormat(InvalidUuidFormatException ex, WebRequest request) {
+        return buildErrorResponse(ex, HttpStatus.BAD_REQUEST, request);
+    }
+
     // --- Manejadores para Errores de Seguridad (4xx) ---
 
     /**

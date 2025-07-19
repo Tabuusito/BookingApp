@@ -2,6 +2,8 @@ package domain.model;
 
 import lombok.*;
 
+import java.util.UUID;
+
 @Data
 @Builder
 @AllArgsConstructor
@@ -9,6 +11,8 @@ import lombok.*;
 public class User {
 
     private Long id;
+
+    private UUID uuid;
 
     private String username;
 
