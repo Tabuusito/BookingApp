@@ -1,7 +1,8 @@
 package domain.model;
 
 public enum Role {
-    USER("ROLE_USER"),
+    CLIENT("ROLE_CLIENT"),
+    PROVIDER("ROLE_PROVIDER"),
     ADMIN("ROLE_ADMIN");
 
     private final String authority;

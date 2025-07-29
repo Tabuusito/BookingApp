@@ -21,6 +21,7 @@ public class OfferedService {
     private String description;
     private Duration defaultDuration;
     private BigDecimal pricePerReservation;
+    private Integer capacity;
     private Boolean isActive;
 
 }

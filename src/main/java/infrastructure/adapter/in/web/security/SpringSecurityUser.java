@@ -8,6 +8,8 @@ import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 public class SpringSecurityUser implements UserDetails {
@@ -16,10 +18,17 @@ public class SpringSecurityUser implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return Collections.singletonList(new SimpleGrantedAuthority(user.getRole().getAuthority()));
+        if (user.getRoles() == null || user.getRoles().isEmpty()) {
+            return Collections.emptySet();
+        }
+        return user.getRoles().stream()
+                .map(role -> new SimpleGrantedAuthority(role.getAuthority()))
+                .collect(Collectors.toSet());
     }
 
     public Long getId() { return user.getId(); }
+
+    public UUID getUuid() { return user.getUuid(); }
 
     @Override
     public String getPassword() {

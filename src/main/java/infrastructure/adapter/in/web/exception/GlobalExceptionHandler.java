@@ -25,7 +25,8 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler({
             UserNotFoundException.class,
-            ReservationNotFoundException.class,
+            BookingNotFoundException.class,
+            TimeSlotNotFoundException.class,
             OfferedServiceNotFoundException.class
     })
     public ResponseEntity<Object> handleResourceNotFoundException(RuntimeException ex, WebRequest request) {
@@ -39,6 +40,8 @@ public class GlobalExceptionHandler {
     @ExceptionHandler({
             DuplicateUserInfoException.class,
             DuplicateServiceNameException.class,
+            DuplicateBookingException.class,
+            TimeSlotClashException.class,
             ServiceInUseException.class,
             ServiceNotAvailableException.class
     })
@@ -46,14 +49,6 @@ public class GlobalExceptionHandler {
         return buildErrorResponse(ex, HttpStatus.CONFLICT, request);
     }
 
-    /**
-     * Maneja excepciones de petición incorrecta (400 Bad Request).
-     * Usado para lógica de negocio inválida, como fechas incorrectas.
-     */
-    @ExceptionHandler(InvalidReservationTimeException.class)
-    public ResponseEntity<Object> handleBadRequestException(RuntimeException ex, WebRequest request) {
-        return buildErrorResponse(ex, HttpStatus.BAD_REQUEST, request);
-    }
 
     /**
      * Maneja errores de validación de DTOs (anotaciones @Valid).

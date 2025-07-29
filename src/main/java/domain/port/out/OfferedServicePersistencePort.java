@@ -1,7 +1,6 @@
 package domain.port.out;
 
 import domain.model.OfferedService;
-import domain.model.Reservation;
 
 import java.util.List;
 import java.util.Optional;

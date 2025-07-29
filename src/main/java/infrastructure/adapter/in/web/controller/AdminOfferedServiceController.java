@@ -32,14 +32,13 @@ public class AdminOfferedServiceController extends AbstractBaseController {
 
     @PostMapping
     public ResponseEntity<OfferedServiceResponseDTO> createOfferedService(
-            @Valid @RequestBody CreateOfferedServiceRequestDTO requestDTO,
-            Authentication authentication) {
+            @Valid @RequestBody CreateOfferedServiceRequestDTO requestDTO) {
 
-        RequesterContext requester = createRequesterContext(authentication);
+        UUID uuid = uuidValidator.UUIDvalidateAndConvert(requestDTO.getOwnerUuid());
 
         OfferedService serviceToCreate = offeredServiceDTOMapper.fromRequestDTO(requestDTO);
         OfferedService createdService = offeredServiceService.createOfferedService(
-                serviceToCreate, requestDTO.getOwnerId(), requester // Aquí ownerId puede ser de otro usuario si el admin lo especifica
+                serviceToCreate, uuid// Aquí ownerId puede ser de otro usuario si el admin lo especifica
         );
         OfferedServiceResponseDTO responseDTO = offeredServiceDTOMapper.toResponseDTO(createdService);
 
@@ -47,10 +46,9 @@ public class AdminOfferedServiceController extends AbstractBaseController {
     }
 
     @GetMapping("/{uuid}")
-    public ResponseEntity<OfferedServiceResponseDTO> getOfferedServiceByUuid(@PathVariable ("uuid") String serviceUuid, Authentication authentication) {
-        RequesterContext requester = createRequesterContext(authentication);
+    public ResponseEntity<OfferedServiceResponseDTO> getOfferedServiceByUuid(@PathVariable ("uuid") String serviceUuid) {
         UUID uuid = uuidValidator.UUIDvalidateAndConvert(serviceUuid);
-        Optional<OfferedService> serviceOpt = offeredServiceService.findOfferedServiceByUuid(uuid, requester); // El servicio verifica que es admin
+        Optional<OfferedService> serviceOpt = offeredServiceService.findOfferedServiceByUuid(uuid); // El servicio verifica que es admin
 
         return serviceOpt
                 .map(offeredServiceDTOMapper::toResponseDTO)
@@ -62,14 +60,13 @@ public class AdminOfferedServiceController extends AbstractBaseController {
     public ResponseEntity<List<OfferedServiceResponseDTO>> getAllOfferedServices(
             @RequestParam(name = "activeOnly", defaultValue = "false") boolean activeOnly, // Admin puede ver inactivos por defecto
             @RequestParam(name = "nameContains", required = false) String nameContains,
-            @RequestParam(name = "ownerId", required = false) Long ownerId, // Admin puede filtrar por ownerId
-            Authentication authentication) {
-
-        RequesterContext requester = createRequesterContext(authentication);
+            @RequestParam(name = "ownerUuid", required = false) String ownerUuid // Admin puede filtrar por ownerId
+            ) {
 
         List<OfferedService> services;
+        UUID uuid = uuidValidator.UUIDvalidateAndConvert(ownerUuid);
 
-        services = offeredServiceService.findAllServicesForAdmin(nameContains, activeOnly, Optional.ofNullable(ownerId), requester);
+        services = offeredServiceService.findAllServicesForAdmin(nameContains, Optional.ofNullable(uuid), activeOnly);
 
         List<OfferedServiceResponseDTO> responseDTOs = services.stream().map(offeredServiceDTOMapper::toResponseDTO).toList();
 
@@ -79,13 +76,11 @@ public class AdminOfferedServiceController extends AbstractBaseController {
     @PutMapping("/{uuid}")
     public ResponseEntity<OfferedServiceResponseDTO> updateOfferedService(
             @PathVariable ("uuid") String serviceUuid,
-            @Valid @RequestBody UpdateOfferedServiceRequestDTO requestDTO,
-            Authentication authentication) {
-        RequesterContext requester = createRequesterContext(authentication);
+            @Valid @RequestBody UpdateOfferedServiceRequestDTO requestDTO) {
         UUID uuid = uuidValidator.UUIDvalidateAndConvert(serviceUuid);
 
         OfferedService updateData = offeredServiceDTOMapper.fromRequestDTO(requestDTO);
-        Optional<OfferedService> updatedServiceOpt = offeredServiceService.updateOfferedService(uuid, updateData, requester); // El servicio verifica que es admin
+        Optional<OfferedService> updatedServiceOpt = offeredServiceService.updateOfferedService(uuid, updateData); // El servicio verifica que es admin
 
         return updatedServiceOpt
                 .map(offeredServiceDTOMapper::toResponseDTO)
@@ -94,15 +89,11 @@ public class AdminOfferedServiceController extends AbstractBaseController {
     }
 
     @DeleteMapping("/{uuid}")
-    public ResponseEntity<Void> deleteOfferedService(@PathVariable ("uuid") String serviceUuid, Authentication authentication) {
-        RequesterContext requester = createRequesterContext(authentication);
+    public ResponseEntity<Void> deleteOfferedService(@PathVariable ("uuid") String serviceUuid) {
         UUID uuid =uuidValidator.UUIDvalidateAndConvert(serviceUuid);
         // La excepción ServiceInUseException será manejada por el GlobalExceptionHandler
-        boolean deleted = offeredServiceService.deleteOfferedService(uuid, requester); // El servicio verifica que es admin
-        if (deleted) {
-            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-        } else {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-        }
+        offeredServiceService.deleteOfferedService(uuid); // El servicio verifica que es admin
+
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 }

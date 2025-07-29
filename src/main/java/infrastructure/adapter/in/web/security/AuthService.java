@@ -14,6 +14,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.Collections;
+
 @Service
 @RequiredArgsConstructor
 public class AuthService {
@@ -37,7 +39,7 @@ public class AuthService {
                 .email(request.getEmail())
                 .passwordHash(passwordEncoder.encode(request.getPassword()))
                 .active(Boolean.TRUE)
-                .role(Role.USER)
+                .roles(Collections.singleton(Role.CLIENT)) //TODO: Dynamic role selection
                 .build();
 
         return userRepository.save(newUser);

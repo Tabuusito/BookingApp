@@ -94,10 +94,10 @@ public class SecurityConfig {
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
 
                         .requestMatchers("/api/me/**").authenticated()
+                        .requestMatchers("/api/timeslots").authenticated()
 
                         .requestMatchers(HttpMethod.GET, "/api/services", "/api/services/**").permitAll()
                         .requestMatchers("/api/services/**").permitAll()
-                        .requestMatchers("/api/reservations/**").authenticated()
 
                         .anyRequest().authenticated()
                 )

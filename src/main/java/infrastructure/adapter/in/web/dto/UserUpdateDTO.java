@@ -7,6 +7,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.Set;
 import java.util.UUID;
 
 @Data
@@ -25,7 +26,7 @@ public class UserUpdateDTO {
     @Size(max = 255, message = "El email debe tener menos de 255 caracteres")
     private String email;
 
-    private String role;
+    private Set<String> roles;
 
     private boolean active;
 }

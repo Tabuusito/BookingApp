@@ -42,6 +42,9 @@ public class OfferedServiceEntity {
     private BigDecimal pricePerReservation;
 
     @Column(nullable = false)
+    private Integer capacity;
+
+    @Column(nullable = false)
     private Boolean isActive;
 
 

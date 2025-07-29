@@ -40,7 +40,7 @@ public class MyOfferedServiceController extends AbstractBaseController {
 
         OfferedService serviceToCreate = offeredServiceDTOMapper.fromRequestDTO(requestDTO);
         OfferedService createdService = offeredServiceService.createOfferedService(
-                serviceToCreate, requester.userId().orElseThrow(() -> new AccessDeniedException("User ID is missing from authentication context")), requester // Aquí ownerId es el del requester
+                serviceToCreate, requester.userUuid().orElseThrow(() -> new AccessDeniedException("User UUID is missing from authentication context"))
         );
         OfferedServiceResponseDTO responseDTO = offeredServiceDTOMapper.toResponseDTO(createdService);
 
@@ -48,10 +48,9 @@ public class MyOfferedServiceController extends AbstractBaseController {
     }
 
     @GetMapping("/{uuid}")
-    public ResponseEntity<OfferedServiceResponseDTO> getMyOfferedServiceByUuid(@PathVariable ("uuid") String serviceUuid, Authentication authentication) {
-        RequesterContext requester = createRequesterContext(authentication);
+    public ResponseEntity<OfferedServiceResponseDTO> getMyOfferedServiceByUuid(@PathVariable ("uuid") String serviceUuid) {
         UUID uuid = uuidValidator.UUIDvalidateAndConvert(serviceUuid);
-        Optional<OfferedService> serviceOpt = offeredServiceService.findOfferedServiceByUuid(uuid, requester);
+        Optional<OfferedService> serviceOpt = offeredServiceService.findOfferedServiceByUuid(uuid);
 
         return serviceOpt
                 .map(offeredServiceDTOMapper::toResponseDTO)
@@ -62,13 +61,10 @@ public class MyOfferedServiceController extends AbstractBaseController {
     @GetMapping
     public ResponseEntity<List<OfferedServiceResponseDTO>> getAllMyOfferedServices(
             @RequestParam(name = "activeOnly", defaultValue = "true") boolean activeOnly,
-            @RequestParam(name = "nameContains", required = false) String nameContains,
-            Authentication authentication) {
-
-        RequesterContext requester = createRequesterContext(authentication);
+            @RequestParam(name = "nameContains", required = false) String nameContains) {
 
         List<OfferedService> services = offeredServiceService.findMyServices(
-                nameContains, activeOnly, requester
+                nameContains, activeOnly
         );
 
         List<OfferedServiceResponseDTO> responseDTOs = services.stream().map(offeredServiceDTOMapper::toResponseDTO).toList();
@@ -79,14 +75,12 @@ public class MyOfferedServiceController extends AbstractBaseController {
     @PutMapping("/{uuid}")
     public ResponseEntity<OfferedServiceResponseDTO> updateMyOfferedService(
             @PathVariable ("uuid") String serviceUuid,
-            @Valid @RequestBody UpdateOfferedServiceRequestDTO requestDTO,
-            Authentication authentication) {
+            @Valid @RequestBody UpdateOfferedServiceRequestDTO requestDTO) {
 
-        RequesterContext requester = createRequesterContext(authentication);
         UUID uuid = uuidValidator.UUIDvalidateAndConvert(serviceUuid);
 
         OfferedService updateData = offeredServiceDTOMapper.fromRequestDTO(requestDTO);
-        Optional<OfferedService> updatedServiceOpt = offeredServiceService.updateOfferedService(uuid, updateData, requester);
+        Optional<OfferedService> updatedServiceOpt = offeredServiceService.updateOfferedService(uuid, updateData);
 
         return updatedServiceOpt
                 .map(offeredServiceDTOMapper::toResponseDTO)
@@ -95,15 +89,9 @@ public class MyOfferedServiceController extends AbstractBaseController {
     }
 
     @DeleteMapping("/{uuid}")
-    public ResponseEntity<Void> deleteMyOfferedService(@PathVariable ("uuid") String serviceUuid, Authentication authentication) {
-        RequesterContext requester = createRequesterContext(authentication);
+    public ResponseEntity<Void> deleteMyOfferedService(@PathVariable ("uuid") String serviceUuid) {
         UUID uuid = uuidValidator.UUIDvalidateAndConvert(serviceUuid);
-        boolean deleted = offeredServiceService.deleteOfferedService(uuid, requester);
-        if (deleted) {
-            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-        } else {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-        }
-
+        offeredServiceService.deleteOfferedService(uuid);
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 }

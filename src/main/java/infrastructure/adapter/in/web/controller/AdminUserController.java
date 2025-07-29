@@ -30,55 +30,48 @@ public class AdminUserController extends AbstractBaseController {
     private final UuidValidator uuidValidator;
 
     @GetMapping
-    public ResponseEntity<List<UserResponseDTO>> getAllUsers(Authentication authentication) {
-        RequesterContext requester = createRequesterContext(authentication);
+    public ResponseEntity<List<UserResponseDTO>> getAllUsers() {
 
-        List<User> users = userService.getAllUsers(requester);
+        List<User> users = userService.getAllUsers();
         List<UserResponseDTO> responseDTOs = users.stream()
                 .map(userDTOMapper::toDTO).toList();
         return new ResponseEntity<>(responseDTOs, HttpStatus.OK);
     }
 
     @GetMapping("/{uuid}")
-    public ResponseEntity<UserResponseDTO> getUserById(@PathVariable ("uuid") String userUuid, Authentication authentication) {
-        RequesterContext requester = createRequesterContext(authentication);
+    public ResponseEntity<UserResponseDTO> getUserById(@PathVariable ("uuid") String userUuid) {
         UUID uuid = uuidValidator.UUIDvalidateAndConvert(userUuid);
 
-        User user = userService.findUserByUuid(uuid, requester);
+        User user = userService.findUserByUuid(uuid);
         UserResponseDTO responseDTO = userDTOMapper.toDTO(user);
         return new ResponseEntity<>(responseDTO, HttpStatus.OK);
     }
 
     @PostMapping
-    public ResponseEntity<UserResponseDTO> createUser(@Valid @RequestBody AdminUserCreationDTO adminUserCreationDTO,
-                                                      Authentication authentication) {
-        RequesterContext requester = createRequesterContext(authentication);
+    public ResponseEntity<UserResponseDTO> createUser(@Valid @RequestBody AdminUserCreationDTO adminUserCreationDTO) {
 
         User newUser = userDTOMapper.toDomain(adminUserCreationDTO);
-        User createdUser = userService.createUser(newUser, requester);
+        User createdUser = userService.createUser(newUser);
         UserResponseDTO responseDTO = userDTOMapper.toDTO(createdUser);
         return new ResponseEntity<>(responseDTO, HttpStatus.CREATED);
     }
 
     @PutMapping("/{uuid}")
     public ResponseEntity<UserResponseDTO> updateUser(@PathVariable ("uuid") String userUuid,
-                                                      @Valid @RequestBody UserUpdateDTO updatedUserDTO,
-                                                      Authentication authentication) {
-        RequesterContext requester = createRequesterContext(authentication);
+                                                      @Valid @RequestBody UserUpdateDTO updatedUserDTO) {
 
         User userToUpdate = userDTOMapper.toDomain(updatedUserDTO);
         UUID uuid = uuidValidator.UUIDvalidateAndConvert(userUuid);
         userToUpdate.setUuid(uuid);
-        User user = userService.updateUser(userToUpdate, requester);
+        User user = userService.updateUser(userToUpdate);
         UserResponseDTO responseDTO = userDTOMapper.toDTO(user);
         return new ResponseEntity<>(responseDTO, HttpStatus.OK);
     }
 
     @DeleteMapping("/{uuid}")
-    public ResponseEntity<Void> deleteUser(@PathVariable ("uuid") String userUuid, Authentication authentication) {
-        RequesterContext requester = createRequesterContext(authentication);
+    public ResponseEntity<Void> deleteUser(@PathVariable ("uuid") String userUuid) {
         UUID uuid = uuidValidator.UUIDvalidateAndConvert(userUuid);
-        userService.deleteUserByUuid(uuid, requester);
+        userService.deleteUserByUuid(uuid);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 }

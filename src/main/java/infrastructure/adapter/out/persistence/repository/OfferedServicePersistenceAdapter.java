@@ -5,14 +5,14 @@ import domain.port.out.OfferedServicePersistencePort;
 import infrastructure.adapter.out.persistence.entity.OfferedServiceEntity;
 import infrastructure.adapter.out.persistence.mapper.OfferedServiceMapper;
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Repository;
+import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-@Repository
+@Component
 @RequiredArgsConstructor
 public class OfferedServicePersistenceAdapter implements OfferedServicePersistencePort {
 

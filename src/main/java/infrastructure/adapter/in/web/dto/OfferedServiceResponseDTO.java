@@ -23,5 +23,6 @@ public class OfferedServiceResponseDTO {
     private Long defaultDurationSeconds;
 
     private BigDecimal pricePerReservation;
+    private int capacity;
     private boolean isActive;
 }

@@ -2,6 +2,7 @@ package domain.model;
 
 import lombok.*;
 
+import java.util.Set;
 import java.util.UUID;
 
 @Data
@@ -22,5 +23,5 @@ public class User {
 
     private Boolean active;
 
-    private Role role;
+    private Set<Role> roles;
 }

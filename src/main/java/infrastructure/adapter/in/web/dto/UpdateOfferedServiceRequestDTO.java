@@ -7,6 +7,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.validator.constraints.UUID;
 
 import java.math.BigDecimal;
 
@@ -19,7 +20,8 @@ public class UpdateOfferedServiceRequestDTO {
     @Size(min = 3, max = 100, message = "Service name must be between 3 and 100 characters, if provided")
     private String name;
 
-    private Long ownerId;
+    @UUID(message = "User UUID must be a valid UUID")
+    private String ownerUuid;
 
     private String description;
 
@@ -28,6 +30,9 @@ public class UpdateOfferedServiceRequestDTO {
 
     @DecimalMin(value = "0.0", message = "Price must be greater than 0, if provided")
     private BigDecimal pricePerReservation;
+
+    @Min(value = 1, message = "Capacity must be at least 1, if provided")
+    private Integer capacity;
 
     private Boolean isActive;
 }
