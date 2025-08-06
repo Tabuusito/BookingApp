@@ -5,6 +5,7 @@ import domain.port.out.BookingPersistencePort;
 import domain.port.out.TimeSlotPersistencePort;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
 import java.util.Optional;
@@ -25,7 +26,8 @@ public class CustomSecurityExpressions {
     /**
      * Verifica si el usuario autenticado es el propietario del servicio especificado.
      */
-    public boolean isServiceOwner(Authentication authentication, UUID serviceUuid) {
+    public boolean isServiceOwner(UUID serviceUuid) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         RequesterContext requester = createRequesterContext(authentication);
 
         // Buscamos el servicio y comprobamos si su dueño coincide con el requester
@@ -37,7 +39,8 @@ public class CustomSecurityExpressions {
     /**
      * Verifica si el usuario autenticado es el cliente de un booking específico.
      */
-    public boolean isBookingClient(Authentication authentication, UUID bookingUuid) {
+    public boolean isBookingClient(UUID bookingUuid) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         RequesterContext requester = createRequesterContext(authentication);
 
         return bookingPersistencePort.findByUuid(bookingUuid)
@@ -45,15 +48,17 @@ public class CustomSecurityExpressions {
                 .orElse(false);
     }
 
-    public boolean isBookingParticipant(Authentication authentication, UUID bookingUuid) {
+    public boolean isBookingParticipant(UUID bookingUuid) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         // Es participante si es el cliente O el proveedor del servicio del slot
-        return isBookingClient(authentication, bookingUuid) || isProviderOfBooking(authentication, bookingUuid);
+        return isBookingClient(bookingUuid) || isProviderOfBooking(bookingUuid);
     }
 
     /**
      * Verifica si el usuario autenticado es el proveedor del servicio asociado a un booking.
      */
-    public boolean isProviderOfBooking(Authentication authentication, UUID bookingUuid) {
+    public boolean isProviderOfBooking(UUID bookingUuid) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         RequesterContext requester = createRequesterContext(authentication);
 
         return bookingPersistencePort.findByUuid(bookingUuid)
@@ -64,7 +69,8 @@ public class CustomSecurityExpressions {
     /**
      * Verifica si el usuario autenticado es él mismo (para perfiles de usuario).
      */
-    public boolean isSelf(Authentication authentication, UUID userUuid) {
+    public boolean isSelf(UUID userUuid) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         RequesterContext requester = createRequesterContext(authentication);
         return requester.isOwner(userUuid);
     }

@@ -14,7 +14,9 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.util.Collections;
+import java.util.Arrays;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -34,15 +36,39 @@ public class AuthService {
             throw new IllegalArgumentException("El nombre de usuario ya está registrado");
         }
 
+        Set<Role> domainRoles = request.getRoles().stream()
+                .map(roleString -> {
+                    if (roleString.equalsIgnoreCase("ADMIN")) {
+                        throw new IllegalArgumentException("Cannot self-assign ADMIN role during registration.");
+                    }
+                    try {
+                        return Role.valueOf(roleString.toUpperCase());
+                    } catch (IllegalArgumentException e) {
+                        throw new IllegalArgumentException("Invalid role provided: " + roleString + ". Valid roles are: " + getValidPublicRoles());
+                    }
+                })
+                .collect(Collectors.toSet());
+
+        if (domainRoles.isEmpty()) {
+            throw new IllegalArgumentException("At least one valid role must be selected.");
+        }
+
         User newUser = User.builder()
                 .username(request.getUsername())
                 .email(request.getEmail())
                 .passwordHash(passwordEncoder.encode(request.getPassword()))
-                .active(Boolean.TRUE)
-                .roles(Collections.singleton(Role.CLIENT)) //TODO: Dynamic role selection
+                .active(Boolean.TRUE) // Podría requerir confirmación por email en un futuro
+                .roles(domainRoles)
                 .build();
 
         return userRepository.save(newUser);
+    }
+
+    private String getValidPublicRoles() {
+        return Arrays.stream(Role.values())
+                .filter(role -> role != Role.ADMIN)
+                .map(Role::name)
+                .collect(Collectors.joining(", "));
     }
 
     public AuthResponseDTO loginUser(LoginRequestDTO request) {
