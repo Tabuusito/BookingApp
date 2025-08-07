@@ -1,5 +1,6 @@
 package infrastructure.adapter.out.persistence.repository;
 
+import domain.model.Role;
 import domain.model.User;
 import domain.port.out.UserPersistencePort;
 import infrastructure.adapter.out.persistence.entity.UserEntity;
@@ -71,6 +72,13 @@ public class UserPersistenceAdapter implements UserPersistencePort {
     @Override
     public Boolean existsByEmail(String email) {
         return userJpaRepository.existsByEmail(email);
+    }
+
+    @Override
+    public List<User> findUsersByRoleAndUsernameContaining(Role role, String usernameQuery) {
+        List<UserEntity> userEntities = userJpaRepository.findByRoleAndUsernameContaining(role, usernameQuery);
+
+        return userMapper.toDomainList(userEntities);
     }
 }
 

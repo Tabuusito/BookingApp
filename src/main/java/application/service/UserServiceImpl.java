@@ -189,4 +189,10 @@ public class UserServiceImpl implements UserService {
 
         deleteUserByUuid(myUserUuid);
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<User> findPublicProviders(String searchQuery) {
+        return userPersistencePort.findUsersByRoleAndUsernameContaining(Role.PROVIDER, searchQuery);
+    }
 }

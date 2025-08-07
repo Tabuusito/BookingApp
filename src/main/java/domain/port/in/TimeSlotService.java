@@ -19,7 +19,6 @@ public interface TimeSlotService {
      * @param serviceUuid el UUID del OfferedService al que se asocia este slot.
      * @return el TimeSlot creado.
      */
-    // @PreAuthorize("hasRole('ADMIN') or @customSecurity.isServiceOwner(#serviceUuid)")
     TimeSlot createTimeSlot(TimeSlot timeSlot, UUID serviceUuid);
 
     /**
@@ -45,6 +44,5 @@ public interface TimeSlotService {
      * @param to la fecha de fin para la búsqueda.
      * @return una lista de TimeSlots disponibles.
      */
-    // No requiere @PreAuthorize, es público
     List<TimeSlot> findAvailableTimeSlots(UUID serviceUuid, Instant from, Instant to);
 }

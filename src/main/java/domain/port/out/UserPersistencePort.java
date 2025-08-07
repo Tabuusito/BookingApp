@@ -1,6 +1,7 @@
 package domain.port.out;
 
 
+import domain.model.Role;
 import domain.model.User;
 
 import java.util.List;
@@ -19,4 +20,5 @@ public interface UserPersistencePort {
     void deleteByUuid(UUID uuid);
     Boolean existsByEmail(String email);
     Boolean existsByUsername(String username);
+    List<User> findUsersByRoleAndUsernameContaining(Role role, String usernameQuery);
 }

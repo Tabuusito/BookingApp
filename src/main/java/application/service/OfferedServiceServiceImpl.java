@@ -40,7 +40,7 @@ public class OfferedServiceServiceImpl implements OfferedServiceService {
     // --- Implementaciones Refactorizadas ---
 
     @Override
-    @PreAuthorize("hasRole('ADMIN') or @customSecurity.isSelf(authentication, #ownerUuid)")
+    @PreAuthorize("hasRole('ADMIN') or @customSecurity.isSelf(#ownerUuid)")
     public OfferedService createOfferedService(OfferedService offeredService, UUID ownerUuid) {
         User owner = getOwnerUserByUuid(ownerUuid);
         offeredService.setOwner(owner);
@@ -177,8 +177,12 @@ public class OfferedServiceServiceImpl implements OfferedServiceService {
         }
     }
 
-    // El método `findServicesByNameContaining` se vuelve redundante si `findAllServicesForAdmin`
-    // puede manejar la búsqueda sin un ownerId. Podemos eliminarlo o mantenerlo si tiene un caso de uso específico.
-    // El método `findAllActiveServices` también puede ser cubierto por los otros.
-    // Simplificar es bueno.
+    @Override
+    @Transactional(readOnly = true)
+    public List<OfferedService> findAllActiveServicesByProvider(UUID providerUuid) {
+        User provider = userPersistencePort.findByUuid(providerUuid)
+                .orElseThrow(() -> new UserNotFoundException("Provider with UUID " + providerUuid + " not found."));
+
+        return offeredServicePersistencePort.findByOwnerIdAndIsActive(provider.getId(), true);
+    }
 }

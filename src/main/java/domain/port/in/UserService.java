@@ -107,4 +107,13 @@ public interface UserService {
      */
     void deleteMyProfile();
 
+    /**
+     * Busca perfiles públicos de proveedores.
+     * @param searchQuery Término de búsqueda para el nombre de usuario.
+     * @return Una lista de usuarios con rol PROVIDER que coincidan.
+     */
+    List<User> findPublicProviders(String searchQuery);
+
+
+
 }

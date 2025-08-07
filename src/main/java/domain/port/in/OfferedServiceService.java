@@ -80,4 +80,11 @@ public interface OfferedServiceService {
     List<OfferedService> findMyServices(String nameContains, boolean activeOnly);
 
     public List<OfferedService> findAllServicesForAdmin(String nameContains, Optional<UUID> ownerUuid, boolean activeOnly);
+
+    /**
+     * Busca todos los servicios activos de un proveedor específico.
+     * @param providerUuid El UUID del proveedor.
+     * @return Una lista de servicios activos.
+     */
+    List<OfferedService> findAllActiveServicesByProvider(UUID providerUuid);
 }

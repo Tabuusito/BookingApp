@@ -87,7 +87,8 @@ public class CustomSecurityExpressions {
         return new RequesterContext(Optional.of(springUser.getUuid()), roles);
     }
 
-    public boolean isTimeSlotProvider(Authentication authentication, UUID timeSlotUuid) {
+    public boolean isTimeSlotProvider(UUID timeSlotUuid) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         RequesterContext requester = createRequesterContext(authentication);
         return timeSlotPersistencePort.findByUuid(timeSlotUuid)
                 .map(ts -> ts.getOfferedService().getOwner().getUuid().equals(requester.userUuid().orElse(null)))

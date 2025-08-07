@@ -22,14 +22,32 @@ import java.util.UUID;
 public class BookingPersistenceAdapter implements BookingPersistencePort {
 
     private final BookingJpaRepository bookingJpaRepository;
+    private final TimeSlotJpaRepository timeSlotJpaRepository;
     private final BookingMapper bookingMapper;
     private final UserMapper userMapper;
     private final TimeSlotMapper timeSlotMapper;
 
     @Override
     public Booking save(Booking booking) {
-        BookingEntity entity = bookingMapper.toEntity(booking);
-        BookingEntity savedEntity = bookingJpaRepository.save(entity);
+        // 1. Obtener la entidad "padre" (TimeSlot) desde la base de datos
+        // Asumimos que el objeto de dominio 'booking' tiene el TimeSlot con su UUID
+        UUID timeSlotUuid = booking.getTimeSlot().getUuid();
+        TimeSlotEntity timeSlotEntity = timeSlotJpaRepository.findByUuid(timeSlotUuid)
+                .orElseThrow(() -> new IllegalStateException("TimeSlot no encontrado para el booking. Inconsistencia de datos."));
+
+        // 2. Mapear el objeto de dominio 'booking' a una entidad
+        BookingEntity bookingEntity = bookingMapper.toEntity(booking);
+
+        // 3.Encapsulamos la sincronización bidireccional
+        timeSlotEntity.addBooking(bookingEntity);
+
+        // 4. Guardar la entidad. Como la relación tiene CascadeType.PERSIST (o ALL),
+        // al guardar el TimeSlot actualizado, también se insertará/actualizará el Booking.
+        // O podemos guardar el booking directamente, ya que la entidad TimeSlot ya está
+        // en el contexto de persistencia y Hibernate detectará su cambio.
+        BookingEntity savedEntity = bookingJpaRepository.save(bookingEntity);
+
+        // 5. Devolver el dominio mapeado
         return bookingMapper.toDomain(savedEntity);
     }
 

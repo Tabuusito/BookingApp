@@ -28,7 +28,7 @@ public class BookingServiceImpl implements BookingService {
     private final UserPersistencePort userPersistencePort;
 
     @Override
-    @PreAuthorize("hasRole('CLIENT')")
+    @PreAuthorize("hasRole('CLIENT') and not @customSecurity.isTimeSlotProvider(#timeSlotUuid)")
     public Booking createBooking(UUID timeSlotUuid, String notes) {
         // 1. Obtener el cliente desde el contexto de seguridad
         UUID clientUuid = ((SpringSecurityUser) SecurityContextHolder.getContext().getAuthentication().getPrincipal()).getUuid();
@@ -65,7 +65,7 @@ public class BookingServiceImpl implements BookingService {
 
         Booking savedBooking = bookingPersistencePort.save(newBooking);
 
-        // 6. Opcional: Si se ha llenado la última plaza, actualizar el estado del TimeSlot
+        // 6. Si se ha llenado la última plaza, actualizar el estado del TimeSlot
         if (currentBookings + 1 >= timeSlot.getCapacity()) {
             timeSlot.setStatus(TimeSlotStatus.FULL);
             timeSlotPersistencePort.save(timeSlot);

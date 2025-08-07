@@ -60,4 +60,16 @@ public class TimeSlotEntity {
             this.uuid = UUID.randomUUID();
         }
     }
+
+    public void addBooking(BookingEntity booking) {
+        this.bookings.add(booking);
+        booking.setTimeSlot(this);
+    }
+
+    public void removeBooking(BookingEntity booking) {
+        this.bookings.remove(booking);
+        booking.setTimeSlot(null);
+    }
+
+
 }
